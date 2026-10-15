@@ -1,0 +1,22 @@
+# Extends the default gitleaks rules. Runs in CI (.github/workflows/ci.yml) and
+# as a pre-commit hook.
+#
+# Conformance fixtures deliberately contain credential-shaped strings to prove
+# the schemas and loader reject them. Every such placeholder contains the marker
+# FAKE (e.g. ghp_FAKEFAKE..., sk-ant-api03-FAKE...), so the allowlist matches
+# that marker inside the finding rather than skipping whole paths. Hex keys
+# cannot contain FAKE, so the one allowed hex placeholder is the sequential
+# 0123456789abcdef0123456789abcdef. A real key pasted into a fixture is still
+# reported. See docs/adr/0004.
+[extend]
+useDefault = true
+
+# The allowlist matches on the finding's text only, not on paths: gitleaks
+# 8.24.0 ignores [[allowlists]] entries when extending the default config,
+# and the single-table form does not honour condition = "AND", so a path entry
+# would skip the whole fixtures directory. CI plants a real-looking canary
+# token in a fixture and fails unless gitleaks reports it.
+[allowlist]
+description = "Fake, marked credential placeholders"
+regexTarget = "match"
+regexes = ['''FAKE''', '''0123456789abcdef0123456789abcdef''']

@@ -1,0 +1,34 @@
+{
+  "description": "the handler syntax must match the runtime language",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/function/handler",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "summarize"
+    },
+    "spec": {
+      "type": "function",
+      "description": "x",
+      "function": {
+        "runtime": {
+          "language": "node",
+          "version": "22"
+        },
+        "handler": "Acme::Acme.Tools.Run"
+      }
+    }
+  }
+}

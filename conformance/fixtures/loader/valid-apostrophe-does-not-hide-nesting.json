@@ -1,0 +1,12 @@
+{
+  "description": "an apostrophe in plain text does not switch off the nesting pre-check",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": true
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: x}\nspec: {\"modelBinding\":\"claude-default\",\"instructions\":\"don't worry\"}\n"
+}

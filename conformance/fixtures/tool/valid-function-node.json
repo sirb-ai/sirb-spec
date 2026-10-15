@@ -1,0 +1,28 @@
+{
+  "description": "Node.js function tool",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "summarize"
+    },
+    "spec": {
+      "type": "function",
+      "description": "Summarize text",
+      "function": {
+        "runtime": {
+          "language": "node",
+          "version": "22"
+        },
+        "handler": "tools/summarize.mjs#handler"
+      }
+    }
+  }
+}

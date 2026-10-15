@@ -1,0 +1,24 @@
+{
+  "description": "every resource requires spec",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "",
+        "keyword": "required",
+        "property": "spec"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support"
+    }
+  }
+}

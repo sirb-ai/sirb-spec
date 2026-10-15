@@ -1,0 +1,29 @@
+{
+  "description": "hex is fine where the name says identifier or digest",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "fetch"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "https://api.example.com/tickets",
+        "headers": {
+          "x-request-id": "0123456789abcdef0123456789abcdef",
+          "if-match": "0123456789abcdef0123456789abcdef"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "description": "open-ended {n,} repeats are rejected",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/rules/0/match/patterns/0",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Policy",
+    "metadata": {
+      "name": "p"
+    },
+    "spec": {
+      "rules": [
+        {
+          "id": "r",
+          "target": "model-output",
+          "effect": "redact",
+          "match": {
+            "patterns": [
+              "x{3,}"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

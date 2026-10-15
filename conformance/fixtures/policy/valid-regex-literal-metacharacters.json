@@ -1,0 +1,34 @@
+{
+  "description": "escaped and in-class * and + are literals, not repeats",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Policy",
+    "metadata": {
+      "name": "p"
+    },
+    "spec": {
+      "rules": [
+        {
+          "id": "r",
+          "target": "model-output",
+          "effect": "redact",
+          "match": {
+            "patterns": [
+              "a\\*b",
+              "[*+]{1,3}",
+              "\\+[0-9]{1,15}",
+              "(?:-)?[a-z]{1,10}"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

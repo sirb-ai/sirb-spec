@@ -1,0 +1,62 @@
+{
+  "description": "S3-backed knowledge base with chunking and retrieval settings",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "KnowledgeBase",
+    "metadata": {
+      "name": "help-center"
+    },
+    "spec": {
+      "sources": [
+        {
+          "type": "s3",
+          "s3": {
+            "bucket": "acme-help-center",
+            "prefix": "articles/",
+            "region": "eu-west-1"
+          },
+          "credentials": {
+            "secretRef": {
+              "name": "aws-kb-reader"
+            }
+          }
+        },
+        {
+          "type": "web",
+          "web": {
+            "urls": [
+              "https://help.example.com"
+            ],
+            "crawlDepth": 2
+          }
+        }
+      ],
+      "embedding": {
+        "modelBinding": "embed-default"
+      },
+      "chunking": {
+        "strategy": "recursive",
+        "size": 800,
+        "overlap": 100
+      },
+      "index": {
+        "provider": "sirb-managed"
+      },
+      "refresh": {
+        "schedule": "0 3 * * 1"
+      },
+      "retrieval": {
+        "topK": 8,
+        "scoreThreshold": 0.35
+      }
+    }
+  }
+}

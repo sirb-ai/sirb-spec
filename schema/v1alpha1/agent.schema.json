@@ -1,16 +1,74 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Sirb resource",
+  "$id": "https://sirb.ai/schemas/v1alpha1/agent.schema.json",
+  "title": "Sirb Agent",
   "type": "object",
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "properties": {
-    "apiVersion": { "const": "sirb/v1alpha1" },
-    "kind": { "enum": ["Agent", "Workflow", "Tool", "Memory", "KnowledgeBase", "ModelBinding", "UIBinding", "Policy"] },
-    "metadata": {
-      "type": "object",
-      "required": ["name"],
-      "properties": { "name": { "type": "string", "pattern": "^[a-z0-9-]{1,63}$" } }
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
     },
-    "spec": { "type": "object" }
+    "kind": {
+      "const": "Agent"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelBinding",
+        "instructions"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "common.schema.json#/$defs/description"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32768,
+          "$ref": "common.schema.json#/$defs/text"
+        },
+        "modelBinding": {
+          "$ref": "common.schema.json#/$defs/ref"
+        },
+        "tools": {
+          "$ref": "common.schema.json#/$defs/refList"
+        },
+        "memory": {
+          "$ref": "common.schema.json#/$defs/ref"
+        },
+        "knowledgeBases": {
+          "$ref": "common.schema.json#/$defs/refList"
+        },
+        "policies": {
+          "$ref": "common.schema.json#/$defs/refList"
+        },
+        "maxIterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        }
+      }
+    }
   }
 }

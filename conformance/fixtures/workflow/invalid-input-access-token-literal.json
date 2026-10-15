@@ -1,0 +1,34 @@
+{
+  "description": "camelCase secret names must be secretRefs",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/steps/0/input/accessToken",
+        "keyword": "type"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "sync"
+    },
+    "spec": {
+      "steps": [
+        {
+          "id": "run",
+          "tool": "ticket-lookup",
+          "input": {
+            "accessToken": "placeholder-FAKE"
+          }
+        }
+      ]
+    }
+  }
+}

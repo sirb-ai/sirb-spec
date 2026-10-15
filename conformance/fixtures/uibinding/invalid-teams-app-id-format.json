@@ -1,0 +1,38 @@
+{
+  "description": "teams appId must be a UUID (format assertion is required)",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/teams/appId",
+        "keyword": "format"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "UIBinding",
+    "metadata": {
+      "name": "support-teams"
+    },
+    "spec": {
+      "target": {
+        "kind": "Agent",
+        "name": "support-agent"
+      },
+      "type": "teams",
+      "teams": {
+        "appId": "not-a-uuid",
+        "appPassword": {
+          "secretRef": {
+            "name": "teams-app"
+          }
+        }
+      }
+    }
+  }
+}

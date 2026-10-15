@@ -1,0 +1,17 @@
+{
+  "description": "malformed JSON is rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "syntax"
+      }
+    ]
+  },
+  "format": "json",
+  "source": "{\"apiVersion\": \"sirb/v1alpha1\",}"
+}

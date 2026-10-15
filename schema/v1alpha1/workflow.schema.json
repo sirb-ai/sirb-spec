@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/workflow.schema.json",
+  "title": "Sirb Workflow",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
+    },
+    "kind": {
+      "const": "Workflow"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "steps"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "common.schema.json#/$defs/description"
+        },
+        "trigger": {
+          "$ref": "#/$defs/trigger"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "outputs": {
+          "$ref": "#/$defs/valueMap"
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "manual",
+            "schedule",
+            "webhook",
+            "event"
+          ]
+        },
+        "schedule": {
+          "$ref": "common.schema.json#/$defs/cron"
+        },
+        "event": {
+          "type": "string",
+          "pattern": "^[a-z0-9.-]{1,128}(?![\\s\\S])"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "schedule"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "schedule"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "event"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "event"
+            ]
+          }
+        }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/name"
+        },
+        "agent": {
+          "$ref": "common.schema.json#/$defs/ref"
+        },
+        "tool": {
+          "$ref": "common.schema.json#/$defs/ref"
+        },
+        "dependsOn": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/name"
+          },
+          "maxItems": 200
+        },
+        "input": {
+          "$ref": "#/$defs/valueMap"
+        },
+        "when": {
+          "type": "string",
+          "maxLength": 1024,
+          "$ref": "common.schema.json#/$defs/text"
+        },
+        "retry": {
+          "$ref": "common.schema.json#/$defs/retry"
+        },
+        "timeoutSeconds": {
+          "$ref": "common.schema.json#/$defs/seconds"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "agent"
+          ]
+        },
+        {
+          "required": [
+            "tool"
+          ]
+        }
+      ]
+    },
+    "valueMap": {
+      "description": "Step inputs or workflow outputs. Values are plain scalars or a secretRef. Keys whose last word names a secret (apiKey, accessToken, password, clientSecret, ...) must be a secretRef.",
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}(?![\\s\\S])"
+      },
+      "patternProperties": {
+        "(^|[_.-])([Aa][Pp][Ii][_.-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Oo][Aa][Uu][Tt][Hh]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Ss][Ii][Gg]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Dd][Ss][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|[Ss][Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|[Aa][Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|.[_.-]([Pp][Ww][Dd])(?![\\s\\S])|^[Kk][Ee][Yy](?![\\s\\S])|(^|[_.-])([Aa][Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])|[a-z0-9](A[Pp][Ii][_.-]?[Kk][Ee][Yy]|T[Oo][Kk][Ee][Nn]|S[Ee][Cc][Rr][Ee][Tt]|P[Aa][Ss][Ss][Ww][Oo][Rr][Dd]|P[Aa][Ss][Ss][Ww][Dd]|P[Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|A[Uu][Tt][Hh]|A[Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|O[Aa][Uu][Tt][Hh]|S[Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|S[Ii][Gg]|C[Oo][Oo][Kk][Ii][Ee]|D[Ss][Nn]|P[Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|S[Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|A[Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|[a-z0-9](P[Ww][Dd])(?![\\s\\S])|[a-z0-9](A[Pp][Ii]|P[Rr][Ii][Vv][Aa][Tt][Ee]|A[Cc][Cc][Ee][Ss][Ss]|S[Ee][Cc][Rr][Ee][Tt]|A[Cc][Cc][Oo][Uu][Nn][Tt]|S[Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|M[Aa][Ss][Tt][Ee][Rr]|S[Ii][Gg][Nn][Ii][Nn][Gg]|E[Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|L[Ii][Cc][Ee][Nn][Ss][Ee]|C[Ll][Ii][Ee][Nn][Tt]|F[Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|A[Uu][Tt][Hh]|A[Pp][Pp]|S[Ee][Rr][Vv][Ii][Cc][Ee]|S[Tt][Oo][Rr][Aa][Gg][Ee]|A[Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])": {
+          "$ref": "common.schema.json#/$defs/secretSource"
+        }
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 8192
+          },
+          {
+            "type": "number",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/secretSource"
+          }
+        ]
+      }
+    }
+  }
+}

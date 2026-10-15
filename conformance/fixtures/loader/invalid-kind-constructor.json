@@ -1,0 +1,19 @@
+{
+  "description": "kind values that are Object.prototype members do not crash the loader",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "schema",
+        "instancePath": "/kind",
+        "keyword": "enum"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: constructor\nmetadata: {name: x}\nspec: {}\n"
+}

@@ -1,0 +1,34 @@
+{
+  "description": "secret-named inputs must be a secretRef",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/steps/0/input/apiKey",
+        "keyword": "type"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "sync"
+    },
+    "spec": {
+      "steps": [
+        {
+          "id": "run",
+          "tool": "ticket-lookup",
+          "input": {
+            "apiKey": "placeholder-FAKE"
+          }
+        }
+      ]
+    }
+  }
+}

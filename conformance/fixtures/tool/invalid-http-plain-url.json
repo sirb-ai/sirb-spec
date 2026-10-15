@@ -1,0 +1,31 @@
+{
+  "description": "tool URLs must be https",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/http/url",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "ticket-lookup"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "http://api.example.com"
+      }
+    }
+  }
+}

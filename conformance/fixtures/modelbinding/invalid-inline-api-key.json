@@ -1,0 +1,37 @@
+{
+  "description": "credentials must be a secretRef, not an inline key",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/credentials",
+        "keyword": "additionalProperties",
+        "property": "apiKey"
+      },
+      {
+        "instancePath": "/spec/credentials",
+        "keyword": "required",
+        "property": "secretRef"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-default"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "mode": "byok",
+      "credentials": {
+        "apiKey": "placeholder-FAKE"
+      }
+    }
+  }
+}

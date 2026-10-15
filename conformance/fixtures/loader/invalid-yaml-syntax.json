@@ -1,0 +1,17 @@
+{
+  "description": "malformed YAML is rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "syntax"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: [Agent\n"
+}

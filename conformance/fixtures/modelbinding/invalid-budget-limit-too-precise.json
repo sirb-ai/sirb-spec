@@ -1,0 +1,34 @@
+{
+  "description": "budget limit allows at most 6 fraction digits",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/budget/limit",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "USD",
+        "limit": "1.0000001",
+        "period": "month",
+        "onExceeded": "block"
+      }
+    }
+  }
+}

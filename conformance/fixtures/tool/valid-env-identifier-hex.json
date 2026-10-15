@@ -1,0 +1,29 @@
+{
+  "description": "hex env values with identifier names are allowed",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "build-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "CONFIG_MD5": "0123456789abcdef0123456789abcdef",
+          "TENANT_ID": "0123456789abcdef0123456789abcdef"
+        }
+      }
+    }
+  }
+}

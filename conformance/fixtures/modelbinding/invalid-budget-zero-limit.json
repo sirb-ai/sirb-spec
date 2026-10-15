@@ -1,0 +1,34 @@
+{
+  "description": "budget limit must be greater than zero",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/budget/limit",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "USD",
+        "limit": "0.00",
+        "period": "month",
+        "onExceeded": "block"
+      }
+    }
+  }
+}

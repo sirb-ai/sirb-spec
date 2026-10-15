@@ -1,0 +1,32 @@
+{
+  "description": "a step runs exactly one of agent or tool",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/steps/0",
+        "keyword": "oneOf"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "ambiguous"
+    },
+    "spec": {
+      "steps": [
+        {
+          "id": "both",
+          "agent": "a",
+          "tool": "t"
+        }
+      ]
+    }
+  }
+}

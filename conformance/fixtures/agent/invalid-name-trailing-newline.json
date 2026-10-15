@@ -1,0 +1,27 @@
+{
+  "description": "a trailing newline is not ignored by pattern anchors in any runtime",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/metadata/name",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support\n"
+    },
+    "spec": {
+      "modelBinding": "claude-default",
+      "instructions": "You answer billing questions politely."
+    }
+  }
+}

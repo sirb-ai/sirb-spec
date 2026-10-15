@@ -1,0 +1,38 @@
+{
+  "description": "web source URLs cannot carry a token query parameter",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/sources/0/web/urls/0",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "KnowledgeBase",
+    "metadata": {
+      "name": "help"
+    },
+    "spec": {
+      "sources": [
+        {
+          "type": "web",
+          "web": {
+            "urls": [
+              "https://help.example.com/export?token=FAKE"
+            ]
+          }
+        }
+      ],
+      "embedding": {
+        "modelBinding": "embed-default"
+      }
+    }
+  }
+}

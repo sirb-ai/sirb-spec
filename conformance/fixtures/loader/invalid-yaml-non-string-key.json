@@ -1,0 +1,17 @@
+{
+  "description": "mapping keys must be strings",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "non-string-key"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: support, labels: {1: x}}\nspec: {modelBinding: m, instructions: hi}\n"
+}

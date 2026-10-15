@@ -1,0 +1,22 @@
+{
+  "description": "resource names are not secrets (sk- is also scikit-learn)",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "sk-learn-helper"
+    },
+    "spec": {
+      "modelBinding": "claude-default",
+      "instructions": "You answer billing questions politely."
+    }
+  }
+}

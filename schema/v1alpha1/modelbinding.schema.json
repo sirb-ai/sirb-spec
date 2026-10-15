@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/modelbinding.schema.json",
+  "title": "Sirb ModelBinding",
+  "description": "Binds a model from a provider, either with the customer's own key (byok) or billed through Sirb (billable).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
+    },
+    "kind": {
+      "const": "ModelBinding"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model",
+        "mode"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "anthropic",
+            "openai",
+            "azure-openai",
+            "google",
+            "bedrock",
+            "mistral",
+            "ollama",
+            "openai-compatible"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/@-]{1,128}(?![\\s\\S])"
+        },
+        "mode": {
+          "description": "byok: the customer supplies credentials via secretRef. billable: Sirb holds the provider keys and bills usage.",
+          "enum": [
+            "byok",
+            "billable"
+          ]
+        },
+        "endpoint": {
+          "description": "Provider endpoint. https everywhere; provider ollama may also use a loopback http URL.",
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/httpsUrl"
+            },
+            {
+              "$ref": "common.schema.json#/$defs/loopbackHttpUrl"
+            }
+          ]
+        },
+        "credentials": {
+          "$ref": "common.schema.json#/$defs/secretSource"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          }
+        },
+        "fallbacks": {
+          "description": "Ordered list of other ModelBindings to try. Each is a full ModelBinding with its own mode, credentials and budget.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/fallback"
+          }
+        },
+        "budget": {
+          "$ref": "#/$defs/budget"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "mode",
+              "provider"
+            ],
+            "properties": {
+              "mode": {
+                "const": "byok"
+              },
+              "provider": {
+                "not": {
+                  "const": "ollama"
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "credentials"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "billable"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "budget"
+            ],
+            "properties": {
+              "credentials": false,
+              "endpoint": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "budget"
+            ],
+            "properties": {
+              "budget": {
+                "type": "object",
+                "properties": {
+                  "onExceeded": {
+                    "const": "fallback"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fallbacks"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "enum": [
+                  "azure-openai",
+                  "openai-compatible",
+                  "ollama"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "endpoint"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "const": "ollama"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "mode": {
+                "const": "byok"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "not": {
+                  "const": "ollama"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "endpoint": {
+                "$ref": "common.schema.json#/$defs/httpsUrl"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "common.schema.json#/$defs/ref"
+        },
+        "triggers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "error",
+              "timeout",
+              "rate-limit",
+              "budget-exceeded"
+            ]
+          }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "limit",
+        "period",
+        "onExceeded"
+      ],
+      "properties": {
+        "currency": {
+          "description": "ISO 4217 code from the supported set.",
+          "enum": [
+            "USD",
+            "EUR",
+            "GBP",
+            "EGP",
+            "SAR",
+            "AED",
+            "JPY",
+            "INR",
+            "CAD",
+            "AUD",
+            "CHF"
+          ]
+        },
+        "limit": {
+          "$ref": "common.schema.json#/$defs/decimalAmount"
+        },
+        "period": {
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "total"
+          ]
+        },
+        "onExceeded": {
+          "enum": [
+            "block",
+            "fallback",
+            "notify"
+          ]
+        },
+        "alertThresholds": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 10,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  }
+}

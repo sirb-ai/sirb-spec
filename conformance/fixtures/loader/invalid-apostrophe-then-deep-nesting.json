@@ -1,0 +1,17 @@
+{
+  "description": "nesting after an apostrophe in plain text is still limited",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "too-deep"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "note: don't\nx: [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+}

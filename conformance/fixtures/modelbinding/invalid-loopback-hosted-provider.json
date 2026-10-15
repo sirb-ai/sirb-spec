@@ -1,0 +1,34 @@
+{
+  "description": "loopback http endpoints are only for ollama",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/endpoint",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "oai"
+    },
+    "spec": {
+      "provider": "openai-compatible",
+      "model": "m",
+      "mode": "byok",
+      "endpoint": "http://localhost:8000",
+      "credentials": {
+        "secretRef": {
+          "name": "oai"
+        }
+      }
+    }
+  }
+}

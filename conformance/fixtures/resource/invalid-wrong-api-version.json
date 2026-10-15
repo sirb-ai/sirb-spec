@@ -1,0 +1,27 @@
+{
+  "description": "apiVersion must be sirb/v1alpha1",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/apiVersion",
+        "keyword": "const"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support"
+    },
+    "spec": {
+      "modelBinding": "claude-default",
+      "instructions": "You answer billing questions politely."
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "description": "a JSON document",
+  "requirements": [
+    "SR-SPEC-02",
+    "SR-SPEC-03",
+    "SR-SPEC-04"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": true
+  },
+  "format": "json",
+  "source": "{\n  \"apiVersion\": \"sirb/v1alpha1\",\n  \"kind\": \"ModelBinding\",\n  \"metadata\": {\n    \"name\": \"claude-default\"\n  },\n  \"spec\": {\n    \"provider\": \"anthropic\",\n    \"model\": \"claude-sonnet-5-5\",\n    \"mode\": \"byok\",\n    \"credentials\": {\n      \"secretRef\": {\n        \"name\": \"anthropic-key\",\n        \"key\": \"api-key\"\n      }\n    }\n  }\n}"
+}

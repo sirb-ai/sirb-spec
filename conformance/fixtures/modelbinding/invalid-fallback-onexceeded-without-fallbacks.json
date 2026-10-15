@@ -1,0 +1,35 @@
+{
+  "description": "onExceeded: fallback requires fallbacks",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec",
+        "keyword": "required",
+        "property": "fallbacks"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "USD",
+        "limit": "250",
+        "period": "month",
+        "onExceeded": "fallback"
+      }
+    }
+  }
+}

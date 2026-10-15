@@ -1,0 +1,35 @@
+{
+  "description": "api-key auth placed in the query string, with the key from a secretRef",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "weather"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "https://api.weather.example.com/v1/forecast",
+        "auth": {
+          "type": "api-key",
+          "in": "query",
+          "name": "appid",
+          "credentials": {
+            "secretRef": {
+              "name": "weather-api"
+            }
+          }
+        }
+      }
+    }
+  }
+}

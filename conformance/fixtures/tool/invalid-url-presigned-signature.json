@@ -1,0 +1,31 @@
+{
+  "description": "presigned URL signatures are credentials",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/http/url",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "fetch"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "https://bucket.s3.amazonaws.com/a.pdf?X-Amz-Credential=FAKE&X-Amz-Signature=FAKE"
+      }
+    }
+  }
+}

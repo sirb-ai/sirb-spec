@@ -1,0 +1,37 @@
+{
+  "description": "lookaround is not allowed (linear-time engines cannot run it)",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/rules/0/match/patterns/0",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Policy",
+    "metadata": {
+      "name": "p"
+    },
+    "spec": {
+      "rules": [
+        {
+          "id": "r",
+          "target": "model-output",
+          "effect": "redact",
+          "match": {
+            "patterns": [
+              "secret(?=:)"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

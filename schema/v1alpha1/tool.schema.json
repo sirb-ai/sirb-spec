@@ -1,0 +1,489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/tool.schema.json",
+  "title": "Sirb Tool",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
+    },
+    "kind": {
+      "const": "Tool"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "description"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "http",
+            "mcp",
+            "function"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "inputSchema": {
+          "description": "JSON Schema (draft 2020-12) describing the tool input. Free-form by design; the loader scans it for literal secrets.",
+          "type": "object",
+          "$ref": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "http": {
+          "$ref": "#/$defs/http"
+        },
+        "mcp": {
+          "$ref": "#/$defs/mcp"
+        },
+        "function": {
+          "$ref": "#/$defs/function"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "http"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "http"
+            ],
+            "properties": {
+              "mcp": false,
+              "function": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "mcp"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "mcp"
+            ],
+            "properties": {
+              "http": false,
+              "function": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "function"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "function"
+            ],
+            "properties": {
+              "http": false,
+              "mcp": false
+            }
+          }
+        }
+      ]
+    },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "url"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        "url": {
+          "$ref": "common.schema.json#/$defs/httpsUrl"
+        },
+        "headers": {
+          "$ref": "common.schema.json#/$defs/httpHeaders"
+        },
+        "auth": {
+          "$ref": "#/$defs/auth"
+        },
+        "timeoutSeconds": {
+          "$ref": "common.schema.json#/$defs/seconds"
+        }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transport"
+      ],
+      "properties": {
+        "transport": {
+          "enum": [
+            "stdio",
+            "streamable-http"
+          ]
+        },
+        "url": {
+          "$ref": "common.schema.json#/$defs/httpsUrl"
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "$ref": "common.schema.json#/$defs/nonSecretValue",
+          "not": {
+            "pattern": "^\\s{0,16}[A-Za-z_][A-Za-z0-9_]{0,127}="
+          },
+          "description": "Executable to start. Inline VAR=value assignments are rejected; use env or secretEnv."
+        },
+        "args": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "common.schema.json#/$defs/argValue"
+          }
+        },
+        "env": {
+          "$ref": "common.schema.json#/$defs/envVars"
+        },
+        "secretEnv": {
+          "$ref": "common.schema.json#/$defs/secretEnv"
+        },
+        "headers": {
+          "$ref": "common.schema.json#/$defs/httpHeaders"
+        },
+        "auth": {
+          "$ref": "#/$defs/auth"
+        },
+        "toolFilter": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 256,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.*-]{1,128}(?![\\s\\S])"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "transport": {
+            "const": "stdio"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "url": false
+        }
+      },
+      "else": {
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "command": false,
+          "args": false
+        }
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "handler"
+      ],
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "language",
+            "version"
+          ],
+          "properties": {
+            "language": {
+              "enum": [
+                "node",
+                "dotnet",
+                "python"
+              ]
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^[0-9]{1,3}(\\.[0-9]{1,3})?(?![\\s\\S])"
+            }
+          }
+        },
+        "handler": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "env": {
+          "$ref": "common.schema.json#/$defs/envVars"
+        },
+        "secretEnv": {
+          "$ref": "common.schema.json#/$defs/secretEnv"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "runtime"
+            ],
+            "properties": {
+              "runtime": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "const": "node"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "handler": {
+                "type": "string",
+                "description": "path/to/module.mjs#exportName",
+                "pattern": "^[A-Za-z0-9_./-]{1,200}\\.(mjs|cjs|js)#[A-Za-z_$][A-Za-z0-9_$]{0,127}(?![\\s\\S])"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "runtime"
+            ],
+            "properties": {
+              "runtime": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "const": "dotnet"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "handler": {
+                "type": "string",
+                "description": "Assembly::Namespace.Type.Method",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.]{0,127}::[A-Za-z_][A-Za-z0-9_.]{0,127}\\.[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "runtime"
+            ],
+            "properties": {
+              "runtime": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "handler": {
+                "type": "string",
+                "description": "package.module:function",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.]{0,127}:[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "none",
+            "bearer",
+            "api-key",
+            "oauth2-client-credentials"
+          ]
+        },
+        "credentials": {
+          "$ref": "common.schema.json#/$defs/secretSource"
+        },
+        "in": {
+          "enum": [
+            "header",
+            "query"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}(?![\\s\\S])"
+        },
+        "tokenUrl": {
+          "$ref": "common.schema.json#/$defs/httpsUrl"
+        },
+        "clientId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:@/-]{1,256}(?![\\s\\S])",
+          "$ref": "common.schema.json#/$defs/notSecretShaped"
+        },
+        "clientSecret": {
+          "$ref": "common.schema.json#/$defs/secretSource"
+        },
+        "scopes": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:/-]{1,256}(?![\\s\\S])"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "none"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "credentials": false,
+              "in": false,
+              "name": false,
+              "tokenUrl": false,
+              "clientId": false,
+              "clientSecret": false,
+              "scopes": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "bearer"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "credentials"
+            ],
+            "properties": {
+              "in": false,
+              "name": false,
+              "tokenUrl": false,
+              "clientId": false,
+              "clientSecret": false,
+              "scopes": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "api-key"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "credentials",
+              "in",
+              "name"
+            ],
+            "properties": {
+              "tokenUrl": false,
+              "clientId": false,
+              "clientSecret": false,
+              "scopes": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "oauth2-client-credentials"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "tokenUrl",
+              "clientId",
+              "clientSecret"
+            ],
+            "properties": {
+              "credentials": false,
+              "in": false,
+              "name": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

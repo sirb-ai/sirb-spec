@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/conformance/fixture.schema.json",
+  "title": "Sirb conformance fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "requirements", "level", "expect"],
+  "properties": {
+    "description": { "type": "string", "minLength": 1 },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^SR-SPEC-[0-9]{2}$" }
+    },
+    "level": {
+      "description": "schema: `document` is checked against the JSON Schemas. loader: `source` text is run through a conforming loader (parse, validate, secret scan).",
+      "enum": ["schema", "loader"]
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "errors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } },
+        "warnings": { "description": "Loader warnings that must be reported (level loader only). Warnings never affect `valid`.", "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } }
+      },
+      "if": { "properties": { "valid": { "const": false } } },
+      "then": { "required": ["errors"] },
+      "else": { "properties": { "errors": false } }
+    },
+    "document": {},
+    "source": { "type": "string" },
+    "format": { "enum": ["yaml", "json"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "level": { "const": "schema" } } },
+      "then": {
+        "required": ["document"],
+        "properties": {
+          "source": false,
+          "format": false,
+          "expect": { "type": "object", "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false, "line": false } } } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "level": { "const": "loader" } } },
+      "then": {
+        "required": ["source", "format"],
+        "properties": {
+          "document": false,
+          "expect": { "type": "object", "properties": { "errors": { "type": "array", "items": { "type": "object", "required": ["code"] } } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "instancePath": { "description": "JSON Pointer into the document (the standard output format's instanceLocation).", "type": "string" },
+        "keyword": { "description": "Standard JSON Schema keyword that failed; a false subschema is \"false\".", "type": "string", "minLength": 1 },
+        "property": { "description": "Informative: the property named by required, additionalProperties or propertyNames errors. Runners that cannot report it skip the check.", "type": "string" },
+        "code": { "description": "Loader issue code (level loader only).", "type": "string", "minLength": 1 },
+        "document": { "description": "Index of the document in a multi-document stream (level loader only).", "type": "integer", "minimum": 0 },
+        "line": { "description": "1-based source line, for issues found in YAML comments (level loader only).", "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

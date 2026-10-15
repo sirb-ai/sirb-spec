@@ -1,0 +1,18 @@
+{
+  "description": "policy patterns over the complexity cap are rejected by the loader",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "invalid-regex",
+        "instancePath": "/spec/rules/0/match/patterns/0"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Policy\nmetadata: {name: p}\nspec:\n  rules:\n    - id: r\n      target: model-output\n      effect: redact\n      match:\n        patterns: [\"[^ ]{0,500}[^ ]{0,500}!\"]\n"
+}

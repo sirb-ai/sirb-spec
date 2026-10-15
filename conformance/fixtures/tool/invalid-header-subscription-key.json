@@ -1,0 +1,35 @@
+{
+  "description": "Azure APIM subscription keys are credential headers",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/http/headers",
+        "keyword": "not",
+        "property": "ocp-apim-subscription-key"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "ticket-lookup"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "https://api.example.com/tickets",
+        "headers": {
+          "ocp-apim-subscription-key": "placeholder"
+        }
+      }
+    }
+  }
+}

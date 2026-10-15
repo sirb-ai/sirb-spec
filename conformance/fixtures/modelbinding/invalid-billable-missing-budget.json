@@ -1,0 +1,29 @@
+{
+  "description": "billable bindings require a budget",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec",
+        "keyword": "required",
+        "property": "budget"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable"
+    }
+  }
+}

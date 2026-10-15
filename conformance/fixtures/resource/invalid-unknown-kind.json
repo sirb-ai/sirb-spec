@@ -1,0 +1,24 @@
+{
+  "description": "kind must be one of the eight v1alpha1 kinds",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/kind",
+        "keyword": "enum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Pipeline",
+    "metadata": {
+      "name": "support"
+    },
+    "spec": {}
+  }
+}

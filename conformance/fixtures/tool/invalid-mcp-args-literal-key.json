@@ -1,0 +1,35 @@
+{
+  "description": "command-line arguments cannot carry provider keys",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp/args/1",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "search-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "args": [
+          "--api-key",
+          "sk-live-FAKE"
+        ]
+      }
+    }
+  }
+}

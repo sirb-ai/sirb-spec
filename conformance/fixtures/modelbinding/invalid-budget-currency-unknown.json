@@ -1,0 +1,34 @@
+{
+  "description": "XYZ is not a supported currency",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/budget/currency",
+        "keyword": "enum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "XYZ",
+        "limit": "250",
+        "period": "month",
+        "onExceeded": "block"
+      }
+    }
+  }
+}
