@@ -1,5 +1,5 @@
 {
-  "description": "input values cannot be credential-shaped",
+  "description": "camelCase secret names must be secretRefs",
   "requirements": [
     "SR-SPEC-04"
   ],
@@ -8,8 +8,8 @@
     "valid": false,
     "errors": [
       {
-        "instancePath": "/spec/steps/0/input/header",
-        "keyword": "not"
+        "instancePath": "/spec/steps/0/input/accessToken",
+        "keyword": "type"
       }
     ]
   },
@@ -25,7 +25,7 @@
           "id": "run",
           "tool": "ticket-lookup",
           "input": {
-            "header": "Bearer FAKExxxx"
+            "accessToken": "placeholder-FAKE"
           }
         }
       ]

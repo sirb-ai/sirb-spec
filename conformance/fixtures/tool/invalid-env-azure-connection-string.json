@@ -1,0 +1,34 @@
+{
+  "description": "Azure storage connection strings carry AccountKey",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp/env/STORAGE",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "blob-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "STORAGE": "DefaultEndpointsProtocol=https;AccountName=acme;AccountKey=FAKE=="
+        }
+      }
+    }
+  }
+}

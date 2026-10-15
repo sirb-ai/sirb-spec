@@ -1,0 +1,17 @@
+{
+  "description": "__proto__ keys are rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "forbidden-key"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: x, labels: {__proto__: x}}\nspec: {\"modelBinding\":\"claude-default\",\"instructions\":\"You answer billing questions politely.\"}\n"
+}

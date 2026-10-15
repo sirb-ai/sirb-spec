@@ -2,6 +2,32 @@
 
 All notable changes to this package. See [VERSIONING.md](VERSIONING.md).
 
+## 0.2.0
+
+**Breaking** (alpha): the loader result and some schema rules changed.
+
+- **Loader:**
+  - Every issue now has a `severity`. Only errors make a result invalid.
+  - `possible-secret` warnings replace hard errors for credential-shaped free
+    text (instructions, descriptions, labels, keys).
+  - `literal-secret` is now reported for any literal in a field meant to
+    hold a secret, whatever its shape.
+  - `load()` and `loadFile()` never throw. New issue codes: `too-deep`,
+    `forbidden-key`, `invalid-input`, `invalid-format`, `io` and `internal`.
+  - The new `maxDepth` limit defaults to 64.
+  - Duplicate-key detection is now linear.
+- **Schema:**
+  - Secret names are matched by whole last word, so `KEYBOARD_LAYOUT`,
+    `authorName`, `tokenCount`, `x-session-id` and `?country_code=` are no
+    longer rejected. Env names ending in `_KEY` are rejected.
+  - Secret-named CLI flags in `mcp.args` are rejected.
+  - More credential shapes are recognised: webhook URLs, Azure connection
+    strings and SAS, npm, PyPI, Hugging Face, Shopify, DigitalOcean and
+    Google OAuth tokens, and presigned-URL signatures.
+  - User-only URL userinfo (`git@`) is allowed.
+  - Free text, labels and resource names are no longer checked by the schema.
+  - Every pattern repeat is bounded.
+
 ## 0.1.0
 
 First release of the Sirb Agent Spec, `sirb/v1alpha1`.

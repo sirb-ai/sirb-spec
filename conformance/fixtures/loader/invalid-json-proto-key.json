@@ -1,0 +1,17 @@
+{
+  "description": "__proto__ keys are rejected in JSON",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "forbidden-key"
+      }
+    ]
+  },
+  "format": "json",
+  "source": "{\"apiVersion\":\"sirb/v1alpha1\",\"kind\":\"Agent\",\"metadata\":{\"name\":\"x\"},\"__proto__\":{},\"spec\":{\"modelBinding\":\"claude-default\",\"instructions\":\"You answer billing questions politely.\"}}"
+}

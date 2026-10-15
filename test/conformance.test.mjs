@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import YAML from 'yaml';
-import { createAjv, load, normalizeKeyword, KIND_TO_ID, RESOURCE_ID } from '../src/index.mjs';
+import { createAjv, load, normalizeKeyword, schemaIdForKind, RESOURCE_ID } from '../src/index.mjs';
 import { ROOT } from './helpers/paths.mjs';
 
 const FIXTURE_DIR = join(ROOT, 'conformance', 'fixtures');
@@ -60,12 +60,13 @@ for (const { name, fixture } of fixtures) {
       const result = load(fixture.source, { format: fixture.format });
       const dump = JSON.stringify(result.issues, null, 2);
       assert.equal(result.valid, expect.valid, `loader verdict mismatch; issues:\n${dump}`);
-      assertLocators(expect.errors, result.issues, dump);
+      assertLocators(expect.errors, result.issues.filter((i) => i.severity === 'error'), dump);
+      assertLocators(expect.warnings, result.issues.filter((i) => i.severity === 'warning'), dump);
       return;
     }
 
     const { document } = fixture;
-    const validate = ajv.getSchema(KIND_TO_ID[document?.kind] ?? RESOURCE_ID);
+    const validate = ajv.getSchema(schemaIdForKind(document?.kind));
     const { valid, errors } = schemaErrors(validate, document);
     const dump = JSON.stringify(errors, null, 2);
     assert.equal(valid, expect.valid, `verdict mismatch; errors:\n${dump}`);

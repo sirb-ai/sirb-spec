@@ -72,6 +72,11 @@ do not depend on any one validator.
 | `code` | `loader` level only. The loader issue code (see below). |
 | `document` | `loader` level only. The index of the document within a multi-document stream. |
 
+At the `loader` level, `expect.errors` is matched against issues whose
+`severity` is `error`. `expect.warnings` is matched against issues whose
+`severity` is `warning`. Warnings never affect `valid`, so a valid fixture
+can still list warnings.
+
 For a failure inside `propertyNames`, `instancePath` is the object being
 checked and `keyword` is the inner keyword that failed (`pattern` or `not`).
 
@@ -104,9 +109,16 @@ checked and `keyword` is the inner keyword that failed (`pattern` or `not`).
 | `yaml-tag` | The text uses an explicit tag (`!!binary`, `!custom`, …). |
 | `non-string-key` | A mapping key is not a string (`1:`, `true:`, `~:`). |
 | `not-an-object` | A document is not a mapping. |
-| `empty`, `too-large`, `too-many-documents` | Limits on the input (1 MiB and 100 documents by default). |
+| `forbidden-key` | A `__proto__` key appears anywhere. |
+| `empty`, `too-large`, `too-many-documents`, `too-deep` | Limits on the input: 1 MiB, 100 documents, and 64 nested collections by default. |
+| `invalid-input`, `invalid-format`, `io` | The input is not text or bytes, the format is unknown, or the file cannot be read. |
 | `schema` | A schema violation. The issue also carries `instancePath` and `keyword`. |
-| `literal-secret` | A string or key looks like a literal credential. See [ADR-0004](../docs/adr/0004-secrets-by-reference.md). |
+| `literal-secret` | A literal value in a field meant to hold a secret (for example `dbPassword: {default: …}`). |
+| `possible-secret` | **Warning.** A credential-shaped value outside secret fields, for example in free text, labels or keys. |
+| `internal` | Unexpected loader failure, reported as an issue instead of thrown. |
+
+Every code is an `error` except `possible-secret`, which is a `warning`. See
+[ADR-0004](../docs/adr/0004-secrets-by-reference.md).
 
 ## Layout
 

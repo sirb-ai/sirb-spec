@@ -10,7 +10,10 @@ export const BASE_ID = 'https://sirb.ai/schemas/v1alpha1/';
 export const RESOURCE_ID = `${BASE_ID}resource.schema.json`;
 export const COMMON_ID = `${BASE_ID}common.schema.json`;
 
-export const KIND_TO_ID = {
+// Null-prototype and frozen: kind values such as "constructor", "toString" or
+// "__proto__" must not resolve to Object.prototype members.
+export const KIND_TO_ID = Object.freeze({
+  __proto__: null,
   Agent: `${BASE_ID}agent.schema.json`,
   Workflow: `${BASE_ID}workflow.schema.json`,
   Tool: `${BASE_ID}tool.schema.json`,
@@ -19,7 +22,11 @@ export const KIND_TO_ID = {
   ModelBinding: `${BASE_ID}modelbinding.schema.json`,
   UIBinding: `${BASE_ID}uibinding.schema.json`,
   Policy: `${BASE_ID}policy.schema.json`,
-};
+});
+
+export function schemaIdForKind(kind) {
+  return typeof kind === 'string' && Object.hasOwn(KIND_TO_ID, kind) ? KIND_TO_ID[kind] : RESOURCE_ID;
+}
 
 /** Loads every schema file in schema/v1alpha1, keyed by file name. */
 export function loadSchemas() {
@@ -65,11 +72,11 @@ function propertyOf(error) {
  * resource envelope when the kind is unknown). Returns spec-level issues.
  */
 export function validateDocument(document, ajv = sharedAjv()) {
-  const id = KIND_TO_ID[document?.kind] ?? RESOURCE_ID;
-  const validate = ajv.getSchema(id);
+  const validate = ajv.getSchema(schemaIdForKind(document?.kind));
   if (validate(document)) return [];
   return validate.errors.map((e) => ({
     code: 'schema',
+    severity: 'error',
     instancePath: e.instancePath,
     keyword: normalizeKeyword(e.keyword),
     ...(propertyOf(e) !== undefined && { property: propertyOf(e) }),

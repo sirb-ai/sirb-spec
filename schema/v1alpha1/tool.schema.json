@@ -169,7 +169,7 @@
           "minLength": 1,
           "$ref": "common.schema.json#/$defs/nonSecretValue",
           "not": {
-            "pattern": "^\\s*[A-Za-z_][A-Za-z0-9_]*="
+            "pattern": "^\\s{0,16}[A-Za-z_][A-Za-z0-9_]{0,127}="
           },
           "description": "Executable to start. Inline VAR=value assignments are rejected; use env or secretEnv."
         },
@@ -177,7 +177,7 @@
           "type": "array",
           "maxItems": 64,
           "items": {
-            "$ref": "common.schema.json#/$defs/nonSecretValue"
+            "$ref": "common.schema.json#/$defs/argValue"
           }
         },
         "env": {
@@ -289,7 +289,7 @@
               "handler": {
                 "type": "string",
                 "description": "path/to/module.mjs#exportName",
-                "pattern": "^[A-Za-z0-9_./-]+\\.(mjs|cjs|js)#[A-Za-z_$][A-Za-z0-9_$]*(?![\\s\\S])"
+                "pattern": "^[A-Za-z0-9_./-]{1,200}\\.(mjs|cjs|js)#[A-Za-z_$][A-Za-z0-9_$]{0,127}(?![\\s\\S])"
               }
             }
           }
@@ -315,7 +315,7 @@
               "handler": {
                 "type": "string",
                 "description": "Assembly::Namespace.Type.Method",
-                "pattern": "^[A-Za-z_][A-Za-z0-9_.]*::[A-Za-z_][A-Za-z0-9_.]*\\.[A-Za-z_][A-Za-z0-9_]*(?![\\s\\S])"
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.]{0,127}::[A-Za-z_][A-Za-z0-9_.]{0,127}\\.[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"
               }
             }
           }
@@ -341,7 +341,7 @@
               "handler": {
                 "type": "string",
                 "description": "package.module:function",
-                "pattern": "^[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_]*(?![\\s\\S])"
+                "pattern": "^[A-Za-z_][A-Za-z0-9_.]{0,127}:[A-Za-z_][A-Za-z0-9_]{0,127}(?![\\s\\S])"
               }
             }
           }

@@ -23,7 +23,8 @@
       "required": ["valid"],
       "properties": {
         "valid": { "type": "boolean" },
-        "errors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } }
+        "errors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } },
+        "warnings": { "description": "Loader warnings that must be reported (level loader only). Warnings never affect `valid`.", "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } }
       },
       "if": { "properties": { "valid": { "const": false } } },
       "then": { "required": ["errors"] },
@@ -41,7 +42,7 @@
         "properties": {
           "source": false,
           "format": false,
-          "expect": { "type": "object", "properties": { "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false } } } } }
+          "expect": { "type": "object", "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false } } } } }
         }
       }
     },
