@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sirb resource",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "sirb/v1alpha1" },
+    "kind": { "enum": ["Agent", "Workflow", "Tool", "Memory", "KnowledgeBase", "ModelBinding", "UIBinding", "Policy"] },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": { "name": { "type": "string", "pattern": "^[a-z0-9-]{1,63}$" } }
+    },
+    "spec": { "type": "object" }
+  }
+}
