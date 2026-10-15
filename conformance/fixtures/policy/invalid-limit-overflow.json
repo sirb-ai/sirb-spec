@@ -1,0 +1,35 @@
+{
+  "description": "run limits must fit a signed 32-bit int",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/limits/maxTokensPerRun",
+        "keyword": "maximum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Policy",
+    "metadata": {
+      "name": "p"
+    },
+    "spec": {
+      "rules": [
+        {
+          "id": "r",
+          "target": "tool-call",
+          "effect": "log"
+        }
+      ],
+      "limits": {
+        "maxTokensPerRun": 4294967296
+      }
+    }
+  }
+}

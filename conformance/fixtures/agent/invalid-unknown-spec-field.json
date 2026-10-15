@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec",
         "keyword": "additionalProperties",
-        "params": {
-          "additionalProperty": "temperature"
-        }
+        "property": "temperature"
       }
     ]
   },

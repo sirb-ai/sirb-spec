@@ -9,7 +9,7 @@
     "errors": [
       {
         "instancePath": "/spec/budget/limit",
-        "keyword": "exclusiveMinimum"
+        "keyword": "not"
       }
     ]
   },
@@ -25,7 +25,7 @@
       "mode": "billable",
       "budget": {
         "currency": "USD",
-        "limit": 0,
+        "limit": "0.00",
         "period": "month",
         "onExceeded": "block"
       }

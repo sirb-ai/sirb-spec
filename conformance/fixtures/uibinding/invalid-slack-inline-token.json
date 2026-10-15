@@ -1,7 +1,7 @@
 {
   "description": "Slack bot token cannot be inline",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {

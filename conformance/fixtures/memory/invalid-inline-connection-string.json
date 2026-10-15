@@ -1,7 +1,7 @@
 {
   "description": "connection strings must not be inline",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -24,7 +24,7 @@
       "scope": "agent",
       "store": {
         "provider": "redis",
-        "connection": "redis://user:placeholder@cache:6379"
+        "connection": "redis://user:FAKE@cache:6379"
       }
     }
   }

@@ -1,5 +1,5 @@
 {
-  "description": "billable binding with a budget that falls back when exceeded",
+  "description": "billable binding with a decimal budget that falls back when exceeded",
   "requirements": [
     "SR-SPEC-02"
   ],
@@ -18,8 +18,8 @@
       "model": "claude-opus-5-5",
       "mode": "billable",
       "budget": {
-        "currency": "EUR",
-        "limit": 1000.5,
+        "currency": "EGP",
+        "limit": "1000.50",
         "period": "month",
         "onExceeded": "fallback",
         "alertThresholds": [
@@ -30,14 +30,14 @@
       "fallbacks": [
         {
           "ref": "claude-haiku-billable",
-          "on": [
+          "triggers": [
             "budget-exceeded",
             "rate-limit"
           ]
         },
         {
           "ref": "local-ollama",
-          "on": [
+          "triggers": [
             "error"
           ]
         }

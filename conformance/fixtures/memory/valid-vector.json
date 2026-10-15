@@ -2,7 +2,7 @@
   "description": "user-scoped vector memory on pgvector",
   "requirements": [
     "SR-SPEC-01",
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {

@@ -1,0 +1,44 @@
+{
+  "description": "the fallback trigger list is \"triggers\"; \"on\" is not accepted (YAML 1.1 reads it as true)",
+  "requirements": [
+    "SR-SPEC-02",
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/fallbacks/0",
+        "keyword": "additionalProperties",
+        "property": "on"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-default"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "mode": "byok",
+      "credentials": {
+        "secretRef": {
+          "name": "anthropic-key",
+          "key": "api-key"
+        }
+      },
+      "fallbacks": [
+        {
+          "ref": "fb",
+          "on": [
+            "error"
+          ]
+        }
+      ]
+    }
+  }
+}

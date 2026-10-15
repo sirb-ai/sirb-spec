@@ -1,21 +1,29 @@
 {
   "name": "@sirb/spec",
-  "version": "0.0.0",
-  "description": "Sirb Agent Spec v1alpha1: JSON Schemas and conformance suite",
+  "version": "0.1.0",
+  "description": "Sirb Agent Spec: JSON Schemas, reference YAML/JSON loader and conformance suite",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
-  "files": [
-    "schema",
-    "conformance"
-  ],
   "exports": {
-    "./schema/v1alpha1/*": "./schema/v1alpha1/*"
+    ".": "./src/index.mjs",
+    "./schema/*": "./schema/*"
   },
+  "bin": {
+    "sirb-validate": "./bin/sirb-validate.mjs"
+  },
+  "files": [
+    "src",
+    "bin",
+    "schema",
+    "conformance",
+    "VERSIONING.md"
+  ],
   "scripts": {
-    "test": "node --test \"test/**/*.test.mjs\""
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "freeze": "node scripts/freeze-schema.mjs"
   },
   "keywords": [
     "sirb",
@@ -23,8 +31,9 @@
     "json-schema",
     "conformance"
   ],
-  "devDependencies": {
+  "dependencies": {
     "ajv": "8.20.0",
-    "ajv-formats": "3.0.1"
+    "ajv-formats": "3.0.1",
+    "yaml": "2.9.1"
   }
 }

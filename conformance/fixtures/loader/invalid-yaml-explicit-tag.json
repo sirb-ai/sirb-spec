@@ -1,0 +1,17 @@
+{
+  "description": "explicit tags are rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "yaml-tag"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: support}\nspec: {modelBinding: m, instructions: !!binary aGk=}\n"
+}

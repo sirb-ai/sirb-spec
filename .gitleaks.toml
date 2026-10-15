@@ -1,9 +1,17 @@
-# Extends the default gitleaks rules. Conformance fixtures deliberately contain
-# credential-shaped placeholder strings (e.g. "Bearer not-a-real-token") to prove
-# the schemas reject them; none are real secrets. See docs/adr/0004.
+# Extends the default gitleaks rules. Runs in CI (.github/workflows/ci.yml) and
+# as a pre-commit hook.
+#
+# Conformance fixtures deliberately contain credential-shaped strings to prove
+# the schemas and loader reject them. Every such placeholder contains the marker
+# FAKE (e.g. ghp_FAKEFAKE..., sk-ant-api03-FAKE...), so the allowlist matches
+# that marker inside the finding rather than skipping whole paths. A real key
+# pasted into a fixture is still reported. See docs/adr/0004.
 [extend]
 useDefault = true
 
 [[allowlists]]
-description = "Conformance fixtures contain fake, credential-shaped placeholders"
+description = "Fake, marked credential placeholders in conformance fixtures"
 paths = ['''^conformance/fixtures/''']
+condition = "AND"
+regexTarget = "match"
+regexes = ['''FAKE''']

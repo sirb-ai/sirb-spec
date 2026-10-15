@@ -8,7 +8,7 @@
     "valid": false,
     "errors": [
       {
-        "instancePath": "/spec/fallbacks/0/on/0",
+        "instancePath": "/spec/fallbacks/0/triggers/0",
         "keyword": "enum"
       }
     ]
@@ -32,7 +32,7 @@
       "fallbacks": [
         {
           "ref": "fb",
-          "on": [
+          "triggers": [
             "always"
           ]
         }

@@ -1,0 +1,4 @@
+{
+  "$comment": "apiVersion directories whose schema files may no longer change (ADR-0009). Written by `npm run freeze -- <dir>`; checked by test/versioning.test.mjs. Alpha directories are not frozen.",
+  "frozen": {}
+}

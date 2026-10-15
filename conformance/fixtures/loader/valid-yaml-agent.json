@@ -1,0 +1,13 @@
+{
+  "description": "a YAML 1.2 document; yes/on/off stay strings",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": true
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata:\n  name: support\n  labels:\n    feature: yes\n    \"on\": \"off\"\nspec:\n  modelBinding: claude-default\n  instructions: |\n    You answer billing questions politely.\n"
+}

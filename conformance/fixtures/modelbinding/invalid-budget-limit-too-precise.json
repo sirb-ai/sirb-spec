@@ -1,5 +1,5 @@
 {
-  "description": "budget currency must be an upper-case ISO 4217 code",
+  "description": "budget limit allows at most 6 fraction digits",
   "requirements": [
     "SR-SPEC-02"
   ],
@@ -8,7 +8,7 @@
     "valid": false,
     "errors": [
       {
-        "instancePath": "/spec/budget/currency",
+        "instancePath": "/spec/budget/limit",
         "keyword": "pattern"
       }
     ]
@@ -24,8 +24,8 @@
       "model": "claude-opus-5-5",
       "mode": "billable",
       "budget": {
-        "currency": "usd",
-        "limit": 250,
+        "currency": "USD",
+        "limit": "1.0000001",
         "period": "month",
         "onExceeded": "block"
       }

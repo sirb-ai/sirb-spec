@@ -1,0 +1,35 @@
+{
+  "description": "env names ending in KEY must use secretEnv",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp/env",
+        "keyword": "not",
+        "property": "OPENAI_KEY"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "search-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "OPENAI_KEY": "placeholder"
+        }
+      }
+    }
+  }
+}

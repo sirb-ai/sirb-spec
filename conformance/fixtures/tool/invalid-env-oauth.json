@@ -1,0 +1,35 @@
+{
+  "description": "env names containing AUTH must use secretEnv",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp/env",
+        "keyword": "not",
+        "property": "GH_OAUTH"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "search-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "GH_OAUTH": "placeholder"
+        }
+      }
+    }
+  }
+}

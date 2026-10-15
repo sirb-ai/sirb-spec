@@ -1,7 +1,7 @@
 {
   "description": "header values that look like credentials are rejected",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -21,12 +21,12 @@
     },
     "spec": {
       "type": "http",
-      "description": "x",
+      "description": "Look up a ticket",
       "http": {
         "method": "GET",
-        "url": "https://api.example.com",
+        "url": "https://api.example.com/tickets",
         "headers": {
-          "x-trace": "Bearer not-a-real-token"
+          "x-trace": "Bearer not-a-real-FAKE"
         }
       }
     }

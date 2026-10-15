@@ -1,6 +1,6 @@
 # 0007. CI supply-chain hardening
 
-- **Status:** Accepted
+- **Status:** Accepted (revised after the PR #1 review)
 - **Date:** 2026-10-15
 - **Requirements:** SR-SPEC-05
 
@@ -11,12 +11,19 @@ Action or npm package in its CI could tamper with the published schemas.
 
 ## Decision
 
-- `.github/workflows/ci.yml` runs `npm ci --ignore-scripts && npm test` on
-  Node 22 and 24, for pushes to `main` and for pull requests.
+- `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests. It has three jobs:
+  - `npm ci --ignore-scripts && npm test` on Node 22 and 24
+  - the Python second-validator conformance runner. Its dependencies are installed with `--require-hashes --no-deps --only-binary=:all:`.
+  - gitleaks over the full git history. The release tarball is checked against a pinned sha256 before it runs.
+- Superseded runs are cancelled for pull requests only. Every `main` build finishes.
 - **Every third-party action is pinned by its full 40-character commit SHA**,
   with a `# vX.Y.Z` comment. Dependabot (already configured for
   `github-actions`) proposes updates.
-  `test/workflows.test.mjs` fails on any `uses:` that is not pinned to a SHA.
+  `test/workflows.test.mjs` parses the workflow and checks the following:
+  - every `uses:` is pinned to a SHA and has a version comment
+  - top-level permissions are exactly `{contents: read}`
+  - no job declares its own `permissions`
+  - `pull_request_target` is not used
 - `permissions: contents: read` is set at the workflow level, and
   `actions/checkout` runs with `persist-credentials: false`.
 - npm dependencies are pinned to exact versions, `package-lock.json` is

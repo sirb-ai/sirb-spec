@@ -16,7 +16,7 @@
     "spec": {
       "trigger": {
         "type": "schedule",
-        "schedule": "0 2 * * *"
+        "schedule": "0 2 * * 1-5"
       },
       "steps": [
         {

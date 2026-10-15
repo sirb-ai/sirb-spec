@@ -1,0 +1,44 @@
+{
+  "description": "redact by portable regex, case-insensitively, and deny unknown domains",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Policy",
+    "metadata": {
+      "name": "egress"
+    },
+    "spec": {
+      "enforcement": "audit",
+      "rules": [
+        {
+          "id": "redact-ids",
+          "target": "model-output",
+          "effect": "redact",
+          "match": {
+            "patterns": [
+              "EMP-[0-9]{6}",
+              "([0-9]{4}[- ]?){3}[0-9]{4}"
+            ],
+            "caseInsensitive": true
+          }
+        },
+        {
+          "id": "deny-egress",
+          "target": "tool-call",
+          "effect": "deny",
+          "match": {
+            "domains": [
+              "pastebin.com"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

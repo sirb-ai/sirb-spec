@@ -1,0 +1,17 @@
+{
+  "description": "duplicate keys are rejected in JSON too",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "duplicate-key"
+      }
+    ]
+  },
+  "format": "json",
+  "source": "{\"apiVersion\":\"sirb/v1alpha1\",\"kind\":\"Agent\",\"metadata\":{\"name\":\"a\"},\"spec\":{\"modelBinding\":\"m\",\"instructions\":\"hi\",\"instructions\":\"bye\"}}"
+}

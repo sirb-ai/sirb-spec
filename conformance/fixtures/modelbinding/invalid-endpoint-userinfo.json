@@ -1,0 +1,34 @@
+{
+  "description": "endpoints cannot embed credentials",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/endpoint",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "azure-gpt"
+    },
+    "spec": {
+      "provider": "azure-openai",
+      "model": "gpt-4o",
+      "mode": "byok",
+      "endpoint": "https://user:FAKEpass@acme.openai.azure.com",
+      "credentials": {
+        "secretRef": {
+          "name": "azure"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "description": "local ollama on loopback http needs no credentials",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "local-ollama"
+    },
+    "spec": {
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "mode": "byok",
+      "endpoint": "http://localhost:11434"
+    }
+  }
+}

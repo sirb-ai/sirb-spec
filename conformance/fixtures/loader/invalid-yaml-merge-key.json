@@ -1,0 +1,17 @@
+{
+  "description": "merge keys are rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "yaml-merge-key"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: support}\nspec:\n  <<: {modelBinding: x}\n  instructions: hi\n"
+}

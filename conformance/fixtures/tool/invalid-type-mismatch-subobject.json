@@ -9,7 +9,7 @@
     "errors": [
       {
         "instancePath": "/spec/mcp",
-        "keyword": "false schema"
+        "keyword": "false"
       }
     ]
   },
@@ -21,10 +21,10 @@
     },
     "spec": {
       "type": "http",
-      "description": "x",
+      "description": "Look up a ticket",
       "http": {
         "method": "GET",
-        "url": "https://api.example.com"
+        "url": "https://api.example.com/tickets"
       },
       "mcp": {
         "transport": "stdio",

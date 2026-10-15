@@ -31,7 +31,7 @@
         }
       ],
       "embedding": {
-        "modelBinding": "e"
+        "modelBinding": "embed-default"
       },
       "chunking": {
         "size": 10

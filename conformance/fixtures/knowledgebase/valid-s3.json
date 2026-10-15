@@ -2,7 +2,7 @@
   "description": "S3-backed knowledge base with chunking and retrieval settings",
   "requirements": [
     "SR-SPEC-01",
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {

@@ -2,7 +2,7 @@
   "description": "byok azure-openai binding with endpoint and its own budget",
   "requirements": [
     "SR-SPEC-02",
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -28,7 +28,7 @@
       },
       "budget": {
         "currency": "USD",
-        "limit": 50,
+        "limit": "50",
         "period": "day",
         "onExceeded": "notify"
       }

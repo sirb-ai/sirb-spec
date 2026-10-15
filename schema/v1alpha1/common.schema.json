@@ -3,11 +3,15 @@
   "$id": "https://sirb.ai/schemas/v1alpha1/common.schema.json",
   "title": "Sirb common definitions",
   "description": "Shared definitions referenced by every Sirb v1alpha1 kind schema.",
+  "$comment": "Regex dialect: patterns use only the subset shared by ECMAScript, .NET and Python (ADR-0010). Case-insensitive matching is spelled out as [Aa] classes because inline flags are not portable.",
   "$defs": {
-    "apiVersion": { "const": "sirb/v1alpha1" },
+    "apiVersion": {
+      "const": "sirb/v1alpha1"
+    },
     "name": {
       "type": "string",
-      "pattern": "^[a-z0-9-]{1,63}$"
+      "pattern": "^[a-z0-9-]{1,63}(?![\\s\\S])",
+      "$ref": "#/$defs/notSecretShaped"
     },
     "ref": {
       "description": "Reference to another Sirb resource by name, in the same namespace.",
@@ -16,37 +20,100 @@
     "refList": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/ref" }
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/ref"
+      }
     },
-    "description": { "type": "string", "maxLength": 2048 },
-    "seconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+    "int32": {
+      "description": "Integer that fits a signed 32-bit int in every runtime.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400
+    },
+    "decimalAmount": {
+      "description": "Positive decimal amount as a string (up to 12 integer and 6 fraction digits). Strings avoid float rounding in billing; runtimes parse into decimal types.",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,11})(\\.[0-9]{1,6})?(?![\\s\\S])",
+      "not": {
+        "pattern": "^0(\\.0+)?(?![\\s\\S])"
+      }
+    },
+    "text": {
+      "description": "Free text. Rejects strings that contain well-known credential shapes.",
+      "type": "string",
+      "$ref": "#/$defs/notSecretShaped"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2048,
+      "$ref": "#/$defs/text"
+    },
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "$ref": "#/$defs/name" },
-        "namespace": { "$ref": "#/$defs/name" },
-        "description": { "type": "string", "maxLength": 1024 },
-        "labels": { "$ref": "#/$defs/labels" }
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "namespace": {
+          "$ref": "#/$defs/name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024,
+          "$ref": "#/$defs/text"
+        },
+        "labels": {
+          "$ref": "#/$defs/labels"
+        }
       }
     },
     "labels": {
       "type": "object",
       "maxProperties": 64,
-      "propertyNames": { "pattern": "^[a-z0-9]([a-z0-9./-]{0,61}[a-z0-9])?$" },
-      "additionalProperties": { "type": "string", "pattern": "^[A-Za-z0-9._-]{0,63}$" }
+      "propertyNames": {
+        "pattern": "^[a-z0-9]([a-z0-9./-]{0,61}[a-z0-9])?(?![\\s\\S])"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._-]{0,63}(?![\\s\\S])",
+        "$ref": "#/$defs/notSecretShaped"
+      }
     },
     "secretRef": {
       "description": "Pointer to a secret held in a secret store. Secret values never appear in a Sirb document.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "$ref": "#/$defs/name" },
-        "key": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,253}$" },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,128}(?![\\s\\S])",
+          "$ref": "#/$defs/notSecretShaped"
+        },
         "store": {
-          "enum": ["sirb", "kubernetes", "vault", "aws-secrets-manager", "gcp-secret-manager", "azure-key-vault"],
+          "enum": [
+            "sirb",
+            "kubernetes",
+            "vault",
+            "aws-secrets-manager",
+            "gcp-secret-manager",
+            "azure-key-vault"
+          ],
           "default": "sirb"
         }
       }
@@ -55,68 +122,173 @@
       "description": "A field whose value is secret. The only accepted form is a secretRef.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["secretRef"],
+      "required": [
+        "secretRef"
+      ],
       "properties": {
-        "secretRef": { "$ref": "#/$defs/secretRef" }
+        "secretRef": {
+          "$ref": "#/$defs/secretRef"
+        }
       }
     },
-    "httpsUrl": {
-      "type": "string",
-      "format": "uri",
-      "pattern": "^https://"
-    },
-    "cron": {
-      "type": "string",
-      "pattern": "^(\\S+\\s){4}\\S+$"
+    "notSecretShaped": {
+      "description": "Rejects strings that contain a well-known credential prefix or a URL with userinfo.",
+      "not": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/knownTokenPattern"
+          },
+          {
+            "$ref": "#/$defs/urlUserinfoPattern"
+          }
+        ]
+      },
+      "$comment": "Building blocks for the secret checks. Readable forms: knownToken = provider key prefixes at a word boundary; urlUserinfo = scheme://user[:pass]@; authScheme = /^\\s*(bearer|basic|digest|token)\\s/i; credentialQuery = /[?&]([^=&#]*[_.-])?(api[_-]?key|key|token|secret|password|sig|auth|credentials?|code|...)=/i."
     },
     "nonSecretValue": {
+      "description": "A value in a non-secret map or argument list. Also rejects HTTP auth-scheme prefixes.",
       "type": "string",
       "maxLength": 1024,
-      "not": { "pattern": "^(Bearer |Basic |sk-|ghp_|github_pat_|xox[abprs]-|AKIA|AIza|-----BEGIN)" }
+      "$ref": "#/$defs/notSecretShaped",
+      "not": {
+        "$ref": "#/$defs/authSchemePattern"
+      }
+    },
+    "knownTokenPattern": {
+      "type": "string",
+      "pattern": "(^|[^A-Za-z0-9])(sk-|sk_live_|sk_test_|rk_live_|ghp_|gho_|ghs_|ghu_|ghr_|github_pat_|glpat-|xox[abprs]-|AKIA[0-9A-Z]{12}|ASIA[0-9A-Z]{12}|AIza[0-9A-Za-z_-]{20}|-----BEGIN|eyJ[A-Za-z0-9_-]{8,}\\.eyJ)"
+    },
+    "urlUserinfoPattern": {
+      "type": "string",
+      "pattern": "[A-Za-z][A-Za-z0-9+.-]*://[^/?#@\\s]*@"
+    },
+    "authSchemePattern": {
+      "type": "string",
+      "pattern": "^\\s*([Bb][Ee][Aa][Rr][Ee][Rr]|[Bb][Aa][Ss][Ii][Cc]|[Dd][Ii][Gg][Ee][Ss][Tt]|[Tt][Oo][Kk][Ee][Nn])\\s+\\S+\\s*(?![\\s\\S])"
+    },
+    "credentialQueryPattern": {
+      "type": "string",
+      "pattern": "[?&]([^=&#]*[_.-])?([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Aa][Pp][Ii][Kk][Ee][Yy]|[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Cc][Cc][Ee][Ss][Ss][_-]?[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Cc][Ll][Ii][Ee][Nn][Tt][_-]?[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Ww][Dd]|[Ss][Ii][Gg]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Aa][Uu][Tt][Hh]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]?|[Cc][Oo][Dd][Ee])="
+    },
+    "httpsUrl": {
+      "description": "https URL with a host and no userinfo. Credential-named query parameters are rejected; use auth with in: query instead. Link-local (cloud metadata) addresses are rejected.",
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?([/?#]\\S*)?(?![\\s\\S])",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^https://169\\.254\\."
+          }
+        },
+        {
+          "not": {
+            "$ref": "#/$defs/credentialQueryPattern"
+          }
+        },
+        {
+          "$ref": "#/$defs/notSecretShaped"
+        }
+      ]
+    },
+    "loopbackHttpUrl": {
+      "description": "Plain-http URL restricted to the loopback interface, for local model servers.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^http://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:[0-9]{1,5})?(/[^\\s?#]*)?(?![\\s\\S])"
+    },
+    "cron": {
+      "description": "Five space-separated cron fields.",
+      "type": "string",
+      "pattern": "^[0-9A-Z*/,?LW#-]+( [0-9A-Z*/,?LW#-]+){4}(?![\\s\\S])"
+    },
+    "safeRegex": {
+      "description": "Regular expression in the portable, linear-time-safe subset (ADR-0010): no lookaround, backreferences, inline flags, atomic groups or possessive quantifiers. Runtimes must evaluate it with a linear-time engine or a match timeout.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "not": {
+        "pattern": "\\(\\?[=!<>imsxn-]|\\\\[1-9]|\\\\k<|[*+?}][+]"
+      }
     },
     "httpHeaders": {
       "description": "Non-secret HTTP headers. Credential headers must use auth with a secretRef.",
       "type": "object",
       "maxProperties": 32,
       "propertyNames": {
-        "pattern": "^[a-z0-9-]{1,128}$",
-        "not": { "pattern": "(authorization|cookie|token|secret|passw|api-?key|credential|private-?key|session)" }
+        "pattern": "^[a-z0-9-]{1,128}(?![\\s\\S])",
+        "not": {
+          "pattern": "(auth|cookie|token|secret|passw|key|credential|session|signature|subscription)"
+        }
       },
-      "additionalProperties": { "$ref": "#/$defs/nonSecretValue" }
+      "additionalProperties": {
+        "$ref": "#/$defs/nonSecretValue"
+      }
     },
     "envVars": {
       "description": "Non-secret environment variables. Secret variables must use secretEnv.",
       "type": "object",
       "maxProperties": 64,
       "propertyNames": {
-        "pattern": "^[A-Z_][A-Z0-9_]{0,127}$",
-        "not": { "pattern": "(TOKEN|SECRET|PASSW|API_?KEY|CREDENTIAL|PRIVATE_?KEY)" }
+        "pattern": "^[A-Z_][A-Z0-9_]{0,127}(?![\\s\\S])",
+        "not": {
+          "pattern": "(KEY|TOKEN|SECRET|PASSW|PWD|CREDENTIAL|AUTH|DSN|CONN_?STR)"
+        }
       },
-      "additionalProperties": { "$ref": "#/$defs/nonSecretValue" }
+      "additionalProperties": {
+        "$ref": "#/$defs/nonSecretValue"
+      }
     },
     "secretEnv": {
       "description": "Environment variables whose values are injected from secrets.",
       "type": "object",
       "maxProperties": 64,
-      "propertyNames": { "pattern": "^[A-Z_][A-Z0-9_]{0,127}$" },
-      "additionalProperties": { "$ref": "#/$defs/secretSource" }
+      "propertyNames": {
+        "pattern": "^[A-Z_][A-Z0-9_]{0,127}(?![\\s\\S])"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/secretSource"
+      }
     },
     "retry": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 10 },
-        "backoff": { "enum": ["none", "fixed", "exponential"] },
-        "initialDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 3600 }
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "backoff": {
+          "enum": [
+            "none",
+            "fixed",
+            "exponential"
+          ]
+        },
+        "initialDelaySeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600
+        }
       }
     },
     "embedding": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["modelBinding"],
+      "required": [
+        "modelBinding"
+      ],
       "properties": {
-        "modelBinding": { "$ref": "#/$defs/ref" },
-        "dimensions": { "type": "integer", "minimum": 1, "maximum": 8192 }
+        "modelBinding": {
+          "$ref": "#/$defs/ref"
+        },
+        "dimensions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8192
+        }
       }
     }
   }

@@ -4,34 +4,72 @@
   "title": "Sirb Policy",
   "type": "object",
   "additionalProperties": false,
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "properties": {
-    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
-    "kind": { "const": "Policy" },
-    "metadata": { "$ref": "common.schema.json#/$defs/metadata" },
-    "spec": { "$ref": "#/$defs/spec" }
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
+    },
+    "kind": {
+      "const": "Policy"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
   },
   "$defs": {
     "spec": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["rules"],
+      "required": [
+        "rules"
+      ],
       "properties": {
-        "description": { "$ref": "common.schema.json#/$defs/description" },
-        "enforcement": { "enum": ["enforce", "audit", "disabled"], "default": "enforce" },
+        "description": {
+          "$ref": "common.schema.json#/$defs/description"
+        },
+        "enforcement": {
+          "enum": [
+            "enforce",
+            "audit",
+            "disabled"
+          ],
+          "default": "enforce"
+        },
         "rules": {
           "type": "array",
           "minItems": 1,
           "maxItems": 200,
-          "items": { "$ref": "#/$defs/rule" }
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
         },
         "limits": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "maxToolCallsPerRun": { "type": "integer", "minimum": 1 },
-            "maxTokensPerRun": { "type": "integer", "minimum": 1 },
-            "maxRunSeconds": { "type": "integer", "minimum": 1 }
+            "maxToolCallsPerRun": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "maxTokensPerRun": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "maxRunSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
           }
         }
       }
@@ -39,35 +77,110 @@
     "rule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "target", "effect"],
+      "required": [
+        "id",
+        "target",
+        "effect"
+      ],
       "properties": {
-        "id": { "$ref": "common.schema.json#/$defs/name" },
-        "description": { "$ref": "common.schema.json#/$defs/description" },
-        "target": { "enum": ["tool-call", "model-input", "model-output", "memory-write", "knowledge-retrieval"] },
-        "effect": { "enum": ["allow", "deny", "require-approval", "redact", "log"] },
-        "priority": { "type": "integer", "minimum": 0, "maximum": 1000 },
-        "match": { "$ref": "#/$defs/match" },
+        "id": {
+          "$ref": "common.schema.json#/$defs/name"
+        },
+        "description": {
+          "$ref": "common.schema.json#/$defs/description"
+        },
+        "target": {
+          "enum": [
+            "tool-call",
+            "model-input",
+            "model-output",
+            "memory-write",
+            "knowledge-retrieval"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "allow",
+            "deny",
+            "require-approval",
+            "redact",
+            "log"
+          ]
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "match": {
+          "$ref": "#/$defs/match"
+        },
         "approval": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["approvers"],
+          "required": [
+            "approvers"
+          ],
           "properties": {
-            "approvers": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 256 } },
-            "timeoutSeconds": { "$ref": "common.schema.json#/$defs/seconds" }
+            "approvers": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "maxItems": 50,
+              "items": {
+                "type": "string",
+                "pattern": "^(user|group):[A-Za-z0-9._@-]{1,200}(?![\\s\\S])"
+              }
+            },
+            "timeoutSeconds": {
+              "$ref": "common.schema.json#/$defs/seconds"
+            }
           }
         }
       },
       "allOf": [
         {
-          "if": { "properties": { "effect": { "const": "require-approval" } } },
-          "then": { "required": ["approval"] }
+          "if": {
+            "properties": {
+              "effect": {
+                "const": "require-approval"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "approval"
+            ]
+          }
         },
         {
-          "if": { "properties": { "effect": { "const": "redact" } } },
-          "then": {
-            "required": ["match"],
+          "if": {
             "properties": {
-              "match": { "type": "object", "anyOf": [{ "required": ["pii"] }, { "required": ["patterns"] }] }
+              "effect": {
+                "const": "redact"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "match"
+            ],
+            "properties": {
+              "match": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "required": [
+                      "pii"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "patterns"
+                    ]
+                  }
+                ]
+              }
             }
           }
         }
@@ -77,15 +190,45 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "tools": { "$ref": "common.schema.json#/$defs/refList" },
+        "tools": {
+          "$ref": "common.schema.json#/$defs/refList"
+        },
         "pii": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "enum": ["email", "phone", "credit-card", "iban", "national-id", "credential"] }
+          "items": {
+            "enum": [
+              "email",
+              "phone",
+              "credit-card",
+              "iban",
+              "national-id",
+              "credential"
+            ]
+          }
         },
-        "patterns": { "type": "array", "minItems": 1, "items": { "type": "string", "format": "regex", "maxLength": 512 } },
-        "domains": { "type": "array", "uniqueItems": true, "items": { "type": "string", "format": "hostname" } }
+        "patterns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "common.schema.json#/$defs/safeRegex"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "format": "hostname"
+          }
+        },
+        "caseInsensitive": {
+          "type": "boolean",
+          "default": false
+        }
       }
     }
   }

@@ -1,117 +1,167 @@
 # Sirb Agent Spec conformance suite
 
-This suite pins down how the `sirb/v1alpha1` schemas behave. Each fixture is a
-Sirb document together with the result a conforming validator must give for it.
-Any implementation (a CLI, an operator or an editor plugin) can run the suite.
+This suite pins down the behaviour of `sirb/v1alpha1` schemas and loaders. It
+is written so that any implementation can run it (Node.js, .NET, editors,
+operators), not just the reference one.
 
-The reference runner is `test/conformance.test.mjs`. Run it with `npm test`.
+There are two reference runners:
+
+| Runner | Covers | Command |
+|---|---|---|
+| Node.js (Ajv 2020, strict) and the reference loader | every fixture | `npm test` |
+| Python (`jsonschema` 4.26) | `level: schema` fixtures | `python -I conformance/runners/python/run_conformance.py .` |
+
+CI runs both. If the two disagree on any verdict or locator, the build fails.
 
 ## Fixture format
 
-A fixture is one JSON file. Its own shape is defined by
-[`fixture.schema.json`](fixture.schema.json), and the runner rejects fixtures
-that don't match it.
+A fixture is one JSON file. Its shape is defined by
+[`fixture.schema.json`](fixture.schema.json). There are two levels.
+
+### `level: schema`
+
+The fixture holds a parsed document and the result of validating it against the JSON Schemas.
 
 ```json
 {
   "description": "billable bindings must not carry customer credentials",
   "requirements": ["SR-SPEC-02"],
   "level": "schema",
-  "expect": {
-    "valid": false,
-    "errors": [{ "instancePath": "/spec/credentials", "keyword": "false schema" }]
-  },
+  "expect": { "valid": false, "errors": [{ "instancePath": "/spec/credentials", "keyword": "false" }] },
   "document": { "apiVersion": "sirb/v1alpha1", "kind": "ModelBinding", "metadata": { "name": "x" }, "spec": {} }
+}
+```
+
+### `level: loader`
+
+The fixture holds raw YAML or JSON text and the result of running it through a
+conforming loader. A loader parses the text, validates every document in it,
+and scans for literal secrets.
+
+```json
+{
+  "description": "anchors and aliases are rejected",
+  "requirements": ["SR-SPEC-03"],
+  "level": "loader",
+  "format": "yaml",
+  "source": "metadata: {name: &n support}\nspec: {modelBinding: *n}\n",
+  "expect": { "valid": false, "errors": [{ "code": "yaml-alias" }] }
 }
 ```
 
 | Field | Required | Meaning |
 |---|---|---|
 | `description` | yes | One sentence that says what the fixture proves. |
-| `requirements` | yes | The `SR-SPEC-NN` IDs this fixture covers. There must be at least one. |
-| `level` | yes | Must be `"schema"`. The value `"semantic"` is reserved for checks that JSON Schema cannot express (see below). |
-| `expect.valid` | yes | Whether the document must be accepted. |
-| `expect.errors` | when `valid` is `false` | Locators for the errors the validator must report. This field is not allowed when `valid` is `true`. |
-| `document` | yes | The Sirb document under test. It can be any JSON value. |
+| `requirements` | yes | The `SR-SPEC-NN` IDs the fixture covers ([traceability](#traceability)). |
+| `level` | yes | `schema` or `loader`. |
+| `expect.valid` | yes | Whether the input must be accepted. |
+| `expect.errors` | when invalid | Error locators. At least one actual error must match each locator. |
+| `document` | `schema` only | The document under test. It can be any JSON value. |
+| `source`, `format` | `loader` only | The raw text, and whether it is `yaml` or `json`. |
 
 ### Error locators
 
-Each entry in `expect.errors` has these fields:
+Locators use the vocabulary of the JSON Schema standard output format, so they
+do not depend on any one validator.
 
-- `instancePath` (required) is a JSON Pointer into `document`. The document root is `""`.
-- `keyword` (required) is the JSON Schema keyword that failed. Names follow
-  Ajv's vocabulary. Note that a `false` subschema, which the schemas use to
-  forbid a property, is reported as `"false schema"`.
-- `params` (optional) is a subset of the error's params, for example
-  `{"missingProperty": "credentials"}`, `{"additionalProperty": "apiKey"}` or
-  `{"propertyName": "authorization"}`.
+| Field | Meaning |
+|---|---|
+| `instancePath` | JSON Pointer into the document (the standard `instanceLocation`). The root is `""`. |
+| `keyword` | The standard keyword that failed (`required`, `pattern`, `not`, …). A `false` subschema is `"false"`. |
+| `property` | *Informative.* The property named by a `required`, `additionalProperties` or `propertyNames` failure. Runners that cannot report it (such as the standard output format) skip this check. |
+| `code` | `loader` level only. The loader issue code (see below). |
+| `document` | `loader` level only. The index of the document within a multi-document stream. |
+
+For a failure inside `propertyNames`, `instancePath` is the object being
+checked and `keyword` is the inner keyword that failed (`pattern` or `not`).
 
 ### Matching rules
 
-1. Validate the document with every error collected, not just the first
-   (Ajv: `allErrors: true`).
-2. The overall result must equal `expect.valid`.
-3. Each expected error must match **at least one** reported error. They match
-   when `instancePath` and `keyword` are equal and the expected `params` are a
-   subset of the reported ones.
-4. Extra reported errors are allowed. `if`/`then`, `oneOf` and `propertyNames`
-   all emit wrapper errors that differ between validators.
-5. Validate each document with the schema for its `kind`. Documents whose
-   `kind` is unknown, or that have no `kind`, use `resource.schema.json`.
-   `resource.schema.json` must also give the same result for every fixture,
-   since it is the single entry point.
+1. Validate with every error collected and **format assertion on**. Format
+   assertion is required for conformance: several fixtures fail *only* on
+   `format` (`uri`, `uuid`, `hostname`).
+2. The verdict must equal `expect.valid`.
+3. Each expected locator must match at least one reported error, meaning every
+   field the locator gives is equal (apart from `property` where the runner
+   cannot report it). Extra reported errors are fine.
+4. `schema` level: validate with the schema for the document's `kind`. Unknown
+   or missing kinds use `resource.schema.json`. The reference runner also
+   requires `resource.schema.json` to give the same verdict, and requires the
+   loader to agree on both a JSON and a YAML encoding of the document. Every
+   schema fixture therefore also has a YAML twin.
+5. Known validator quirk: python-jsonschema 4.26 reports a `false`-schema
+   failure at the *parent* object. The Python runner accepts the parent path
+   for `keyword: "false"` only.
+
+### Loader issue codes
+
+| Code | Meaning |
+|---|---|
+| `syntax` | The text is not well-formed YAML 1.2 or JSON. |
+| `duplicate-key` | The same mapping key appears twice. |
+| `yaml-alias` | The text uses an anchor (`&`) or alias (`*`). |
+| `yaml-merge-key` | The text uses a merge key (`<<`). |
+| `yaml-tag` | The text uses an explicit tag (`!!binary`, `!custom`, …). |
+| `non-string-key` | A mapping key is not a string (`1:`, `true:`, `~:`). |
+| `not-an-object` | A document is not a mapping. |
+| `empty`, `too-large`, `too-many-documents` | Limits on the input (1 MiB and 100 documents by default). |
+| `schema` | A schema violation. The issue also carries `instancePath` and `keyword`. |
+| `literal-secret` | A string or key looks like a literal credential. See [ADR-0004](../docs/adr/0004-secrets-by-reference.md). |
 
 ## Layout
 
 ```
 conformance/
   fixture.schema.json
-  fixtures/<kind>/valid-<slug>.json
-  fixtures/<kind>/invalid-<slug>.json
-  fixtures/resource/...        # envelope cases (apiVersion, kind, required fields)
+  fixtures/<kind>/(valid|invalid)-<slug>.json   # level: schema
+  fixtures/resource/...                          # envelope cases
+  fixtures/loader/(valid|invalid)-<slug>.json    # level: loader
+  runners/python/                                # second validator
 ```
 
-`<kind>` is the kind name in lower case. A fixture's file name prefix must
-agree with `expect.valid`, and the runner enforces this.
+A fixture's file name prefix must agree with `expect.valid`, and the runner enforces this.
 
 ## Adding a fixture
 
-1. Pick the kind directory and a short slug that says what is being tested.
-2. Write the document. Every credential-shaped string must be an obviously
-   fake placeholder, such as `"placeholder"` or `"Bearer not-a-real-token"`.
-   Never use a real or real-looking key. The fixtures directory is in the
-   gitleaks allowlist only so that these placeholders can be committed.
-3. For an invalid fixture, run `npm test` once and take the `instancePath`
-   and `keyword` of the error that best explains the failure from the printed
-   Ajv errors. Pick the most specific one, not a wrapper like `if`.
-4. Tag the fixture with the requirement IDs it covers.
+1. Pick the directory and a slug that says what is being tested.
+2. Every credential-shaped placeholder must contain the marker `FAKE`, for
+   example `ghp_FAKEFAKE…` or `sk-ant-api03-FAKE…`. gitleaks runs in CI and
+   allowlists only findings that contain that marker. Never paste a real key.
+3. For an invalid fixture, choose the error that best explains the failure,
+   using its `instancePath` and the standard `keyword`. Do not choose a wrapper
+   such as `if`, `allOf` or `anyOf`, because validators report wrappers
+   differently.
+4. Tag the requirement IDs.
+5. Run `npm test`. If you have Python, also run the Python runner.
 
 ## Traceability
 
-> **Assumption:** `docs/requirements.md` was not in the repository when this
-> suite was written. The IDs below are the assumed mapping recorded in
-> [ADR-0001](../docs/adr/0001-record-architecture-decisions.md). Update both
-> places once the requirements document lands.
+> Only SR-SPEC-04 is confirmed (by the PR #1 review). The other IDs were
+> inferred because `docs/requirements.md` is not in this repository. See
+> [ADR-0001](../docs/adr/0001-record-architecture-decisions.md). When the
+> requirements document lands, update ADR-0001, this table and
+> `test/traceability.test.mjs` together.
 
-| ID | Requirement (assumed) | Where it is verified |
+| ID | Requirement | Verified by |
 |---|---|---|
-| SR-SPEC-01 | There is a versioned JSON Schema (draft 2020-12) for each of the 8 kinds, plus a common envelope. | Fixtures tagged `SR-SPEC-01` and `test/schemas.test.mjs` |
-| SR-SPEC-02 | ModelBinding supports `mode: byok \| billable`, fallbacks and a per-binding budget. | Fixtures tagged `SR-SPEC-02` |
-| SR-SPEC-03 | Secrets appear only as `secretRef`, and inline secret values are rejected. | Fixtures tagged `SR-SPEC-03` and the secret meta-lint in `test/schemas.test.mjs` |
-| SR-SPEC-04 | A documented conformance fixture format exists with at least 20 valid and invalid fixtures. | This document and `test/conformance.test.mjs` |
-| SR-SPEC-05 | `npm test` runs in CI with actions pinned by commit SHA. | `.github/workflows/ci.yml` and `test/workflows.test.mjs` |
+| SR-SPEC-01 | There are JSON Schemas (draft 2020-12) for the eight kinds and a common envelope. | Fixtures tagged SR-SPEC-01 and `test/schemas.test.mjs` |
+| SR-SPEC-02 | ModelBinding supports `mode: byok \| billable`, fallbacks and a per-binding budget. | Fixtures tagged SR-SPEC-02 |
+| SR-SPEC-03 | YAML and JSON are accepted. | `loader/` fixtures and the YAML twin of every schema fixture |
+| SR-SPEC-04 | Secrets appear only as `secretRef`, and the loader rejects literal keys. | Fixtures tagged SR-SPEC-04 (schema and loader), plus the secret meta-lint |
+| SR-SPEC-05 | The spec is versioned with semver, and breaking changes need a new apiVersion and a migration. | `test/versioning.test.mjs` and [VERSIONING.md](../VERSIONING.md) |
 
-`test/traceability.test.mjs` fails if SR-SPEC-01, -02 or -03 has no valid
-fixture or no invalid fixture. It also fails if any kind has no valid fixture
-or no invalid fixture.
+`test/traceability.test.mjs` checks the following:
+- SR-SPEC-01 to 04 each have at least one valid and one invalid fixture.
+- SR-SPEC-03 has valid fixtures in both YAML and JSON.
+- SR-SPEC-04 includes loader-level `literal-secret` rejections.
+- Every kind has at least two valid fixtures and at least one invalid fixture.
 
-## Out of scope for `level: schema`
+## Not covered yet
 
-These rules are normative but cannot be expressed in JSON Schema. They are
-reserved for future `level: "semantic"` fixtures (see
-[ADR-0006](../docs/adr/0006-conformance-fixture-format.md)):
+These rules are normative but cannot be expressed in JSON Schema. They need a
+future `level: semantic`:
 
 - Workflow step `id`s are unique, every `dependsOn` target exists, and the step graph is acyclic.
-- Cross-resource references (`modelBinding`, `tools`, `fallbacks[].ref`, …) resolve to existing resources of the right kind.
+- Cross-resource references resolve to an existing resource of the right kind.
 - ModelBinding fallback chains contain no cycles.
 - KnowledgeBase `chunking.overlap` is smaller than `chunking.size`.

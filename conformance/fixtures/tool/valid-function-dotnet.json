@@ -1,0 +1,28 @@
+{
+  "description": ".NET function tool",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "refund"
+    },
+    "spec": {
+      "type": "function",
+      "description": "Issue a refund",
+      "function": {
+        "runtime": {
+          "language": "dotnet",
+          "version": "8.0"
+        },
+        "handler": "Acme.Tools::Acme.Tools.Refunds.Issue"
+      }
+    }
+  }
+}

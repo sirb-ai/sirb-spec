@@ -1,0 +1,34 @@
+{
+  "description": "ollama bindings are always byok",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mode",
+        "keyword": "const"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "local-ollama"
+    },
+    "spec": {
+      "provider": "ollama",
+      "model": "llama3.1",
+      "mode": "billable",
+      "budget": {
+        "currency": "USD",
+        "limit": "250",
+        "period": "month",
+        "onExceeded": "block"
+      }
+    }
+  }
+}

@@ -10,9 +10,7 @@
       {
         "instancePath": "",
         "keyword": "required",
-        "params": {
-          "missingProperty": "spec"
-        }
+        "property": "spec"
       }
     ]
   },

@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec/trigger",
         "keyword": "required",
-        "params": {
-          "missingProperty": "schedule"
-        }
+        "property": "schedule"
       }
     ]
   },

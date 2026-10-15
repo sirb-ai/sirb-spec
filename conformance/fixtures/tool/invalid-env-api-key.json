@@ -1,7 +1,7 @@
 {
   "description": "secret-looking env var names must use secretEnv",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -9,10 +9,8 @@
     "errors": [
       {
         "instancePath": "/spec/mcp/env",
-        "keyword": "propertyNames",
-        "params": {
-          "propertyName": "OPENAI_API_KEY"
-        }
+        "keyword": "not",
+        "property": "OPENAI_API_KEY"
       }
     ]
   },
@@ -24,7 +22,7 @@
     },
     "spec": {
       "type": "mcp",
-      "description": "x",
+      "description": "Search MCP server",
       "mcp": {
         "transport": "stdio",
         "command": "search-mcp",

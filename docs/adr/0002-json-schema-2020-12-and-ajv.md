@@ -1,6 +1,6 @@
 # 0002. JSON Schema draft 2020-12, validated with Ajv in strict mode
 
-- **Status:** Accepted
+- **Status:** Accepted (revised after the PR #1 review)
 - **Date:** 2026-10-15
 - **Requirements:** SR-SPEC-01, SR-SPEC-04
 
@@ -22,14 +22,15 @@ exactly one meaning.
   reports these as unknown even though they are correct. All other strict
   checks stay on, including `strictTypes`. Conditional subschemas therefore
   carry an explicit `"type": "object"` where Ajv needs one.
-- Error locators in the conformance fixtures use Ajv's keyword names, such as
-  `"false schema"` (ADR-0006).
+- Ajv is *a* reference, not *the* definition. Conformance locators use the
+  standard output-format vocabulary (ADR-0006), and a second validator
+  (python-jsonschema) runs the suite in CI.
+- Format assertion is **required**.
 
 ## Consequences
 
 - Strict mode catches typos such as unknown keywords and ignored constraints when the schemas are compiled.
-- Other validators can run the suite. They may need to map a few keyword
-  names, the main one being `"false schema"`.
+- Other validators can run the suite without adapting to Ajv's error shape.
 - Formats (`uri`, `uuid`, `regex`, `hostname`) are asserted, not just annotated.
 
 ## Alternatives considered

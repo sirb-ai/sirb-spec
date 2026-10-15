@@ -1,0 +1,17 @@
+{
+  "description": "anchors and aliases are rejected",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "yaml-alias"
+      }
+    ]
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata: {name: &n support}\nspec: {modelBinding: *n, instructions: hi}\n"
+}

@@ -5,21 +5,155 @@
   "description": "Entry point that validates any Sirb v1alpha1 document by dispatching on kind.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "properties": {
-    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
-    "kind": { "enum": ["Agent", "Workflow", "Tool", "Memory", "KnowledgeBase", "ModelBinding", "UIBinding", "Policy"] },
-    "metadata": { "$ref": "common.schema.json#/$defs/metadata" },
-    "spec": { "type": "object" }
+    "apiVersion": {
+      "$ref": "common.schema.json#/$defs/apiVersion"
+    },
+    "kind": {
+      "enum": [
+        "Agent",
+        "Workflow",
+        "Tool",
+        "Memory",
+        "KnowledgeBase",
+        "ModelBinding",
+        "UIBinding",
+        "Policy"
+      ]
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "spec": {
+      "type": "object"
+    }
   },
   "allOf": [
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "Agent" } } }, "then": { "$ref": "agent.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "Workflow" } } }, "then": { "$ref": "workflow.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "Tool" } } }, "then": { "$ref": "tool.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "Memory" } } }, "then": { "$ref": "memory.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "KnowledgeBase" } } }, "then": { "$ref": "knowledgebase.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "ModelBinding" } } }, "then": { "$ref": "modelbinding.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "UIBinding" } } }, "then": { "$ref": "uibinding.schema.json" } },
-    { "if": { "required": ["kind"], "properties": { "kind": { "const": "Policy" } } }, "then": { "$ref": "policy.schema.json" } }
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "Agent"
+          }
+        }
+      },
+      "then": {
+        "$ref": "agent.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "Workflow"
+          }
+        }
+      },
+      "then": {
+        "$ref": "workflow.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "Tool"
+          }
+        }
+      },
+      "then": {
+        "$ref": "tool.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "Memory"
+          }
+        }
+      },
+      "then": {
+        "$ref": "memory.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "KnowledgeBase"
+          }
+        }
+      },
+      "then": {
+        "$ref": "knowledgebase.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "ModelBinding"
+          }
+        }
+      },
+      "then": {
+        "$ref": "modelbinding.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "UIBinding"
+          }
+        }
+      },
+      "then": {
+        "$ref": "uibinding.schema.json"
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "Policy"
+          }
+        }
+      },
+      "then": {
+        "$ref": "policy.schema.json"
+      }
+    }
   ]
 }

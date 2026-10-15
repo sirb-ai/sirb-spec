@@ -1,0 +1,28 @@
+{
+  "description": "integers must fit a signed 32-bit int",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/ttlSeconds",
+        "keyword": "maximum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Memory",
+    "metadata": {
+      "name": "kv"
+    },
+    "spec": {
+      "type": "buffer",
+      "scope": "session",
+      "ttlSeconds": 100000000000000000000
+    }
+  }
+}

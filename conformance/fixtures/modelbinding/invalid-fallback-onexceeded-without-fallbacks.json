@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec",
         "keyword": "required",
-        "params": {
-          "missingProperty": "fallbacks"
-        }
+        "property": "fallbacks"
       }
     ]
   },
@@ -28,7 +26,7 @@
       "mode": "billable",
       "budget": {
         "currency": "USD",
-        "limit": 250,
+        "limit": "250",
         "period": "month",
         "onExceeded": "fallback"
       }

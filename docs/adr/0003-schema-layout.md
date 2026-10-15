@@ -30,8 +30,7 @@ That file name collided with the Agent kind.
   same name (for example `type: http` → `http: {...}`). Encode this with
   `if`/`then` blocks that require the matching block and forbid the others.
   This gives precise errors where `oneOf` would produce noisy ones.
-- `v1alpha1` may change in breaking ways. A later `v1beta1` gets its own
-  directory, and the old schemas are kept.
+- Versioning, freezing and migrations are defined in ADR-0009.
 
 ## Consequences
 

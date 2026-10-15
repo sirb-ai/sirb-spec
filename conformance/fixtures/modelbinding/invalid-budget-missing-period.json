@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec/budget",
         "keyword": "required",
-        "params": {
-          "missingProperty": "period"
-        }
+        "property": "period"
       }
     ]
   },
@@ -28,7 +26,7 @@
       "mode": "billable",
       "budget": {
         "currency": "USD",
-        "limit": 10,
+        "limit": "10",
         "onExceeded": "block"
       }
     }

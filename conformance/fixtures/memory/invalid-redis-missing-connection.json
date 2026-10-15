@@ -1,7 +1,7 @@
 {
   "description": "external stores need a connection secretRef",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec/store",
         "keyword": "required",
-        "params": {
-          "missingProperty": "connection"
-        }
+        "property": "connection"
       }
     ]
   },

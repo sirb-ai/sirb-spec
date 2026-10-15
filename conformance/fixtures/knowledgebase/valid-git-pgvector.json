@@ -1,0 +1,49 @@
+{
+  "description": "git source indexed into pgvector with a connection secretRef",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "KnowledgeBase",
+    "metadata": {
+      "name": "eng-docs"
+    },
+    "spec": {
+      "sources": [
+        {
+          "type": "git",
+          "git": {
+            "url": "https://github.com/acme/handbook",
+            "branch": "main",
+            "paths": [
+              "docs/"
+            ]
+          },
+          "credentials": {
+            "secretRef": {
+              "name": "github-reader"
+            }
+          }
+        }
+      ],
+      "embedding": {
+        "modelBinding": "embed-default"
+      },
+      "index": {
+        "provider": "pgvector",
+        "connection": {
+          "secretRef": {
+            "name": "pg-kb",
+            "key": "dsn"
+          }
+        }
+      }
+    }
+  }
+}

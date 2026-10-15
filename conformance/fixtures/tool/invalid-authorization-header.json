@@ -1,7 +1,7 @@
 {
   "description": "credential headers must use auth, not headers",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -9,10 +9,8 @@
     "errors": [
       {
         "instancePath": "/spec/http/headers",
-        "keyword": "propertyNames",
-        "params": {
-          "propertyName": "authorization"
-        }
+        "keyword": "not",
+        "property": "authorization"
       }
     ]
   },
@@ -24,10 +22,10 @@
     },
     "spec": {
       "type": "http",
-      "description": "x",
+      "description": "Look up a ticket",
       "http": {
         "method": "GET",
-        "url": "https://api.example.com",
+        "url": "https://api.example.com/tickets",
         "headers": {
           "authorization": "placeholder"
         }

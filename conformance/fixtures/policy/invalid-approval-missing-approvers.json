@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec/rules/0",
         "keyword": "required",
-        "params": {
-          "missingProperty": "approval"
-        }
+        "property": "approval"
       }
     ]
   },

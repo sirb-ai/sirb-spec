@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BASE_ID, KIND_TO_ID, RESOURCE_ID, createAjv, loadSchemas } from './helpers/ajv.mjs';
+import { KIND_TO_ID, RESOURCE_ID, createAjv } from '../src/index.mjs';
+import { BASE_ID, loadSchemas } from '../src/validator.mjs';
 
 const schemas = loadSchemas();
 const ajv = createAjv();
@@ -11,8 +12,18 @@ const FREE_FORM_EXEMPT = new Set([
   'resource.schema.json#/properties/spec', // validated by the kind schema it dispatches to
 ]);
 
-// Property names that must hold a secret reference rather than a value.
-const SECRET_NAME = /(apikey|api_key|token|secret|password|passwd|credentials?|privatekey|connection)$/i;
+// Property names that must hold a secret reference rather than a value. The
+// match is unanchored so plurals and suffixed forms (apiKeys, privateKeyPem,
+// secretValue) are caught; NOT_SECRET lists the reviewed exceptions.
+const SECRET_NAME = /(api_?keys?|tokens?|secrets?|passw(or)?ds?|credentials?|private_?keys?|connection|signing)/i;
+const NOT_SECRET = new Set([
+  'secretRef', // the reference itself
+  'secretEnv', // map of name -> secretSource
+  'maxTokens',
+  'maxOutputTokens',
+  'maxTokensPerRun',
+  'tokenUrl', // OAuth endpoint, not a credential
+]);
 const SECRET_SOURCE_REFS = new Set([
   'common.schema.json#/$defs/secretSource',
   '#/$defs/secretSource',
@@ -69,13 +80,38 @@ for (const [file, schema] of Object.entries(schemas)) {
     for (const [ptr, sub] of walk(schema)) {
       if (!sub.properties || inConditional(ptr)) continue;
       for (const [name, prop] of Object.entries(sub.properties)) {
-        if (name === 'secretRef' || !SECRET_NAME.test(name)) continue;
+        if (NOT_SECRET.has(name) || !SECRET_NAME.test(name)) continue;
         if (prop === false) continue; // forbidding a property is always allowed
         assert.ok(
           SECRET_SOURCE_REFS.has(prop.$ref),
           `${file}${ptr}/properties/${name} looks secret and must be a secretSource reference`,
         );
       }
+    }
+  });
+
+  test(`${file} bounds every number so all runtimes can represent it`, () => {
+    // ADR-0010: .NET binds integers to int/long and JS loses precision above 2^53.
+    for (const [ptr, sub] of walk(schema)) {
+      if (sub.type !== 'integer' && sub.type !== 'number') continue;
+      assert.ok('maximum' in sub || 'exclusiveMaximum' in sub, `${file}${ptr} needs a maximum`);
+      assert.ok(Math.abs(sub.maximum ?? sub.exclusiveMaximum) <= Number.MAX_SAFE_INTEGER, `${file}${ptr} maximum exceeds 2^53-1`);
+    }
+  });
+
+  test(`${file} anchors patterns portably`, () => {
+    // ADR-0010: `$` also matches before a trailing newline in Python and .NET,
+    // so the end of input is written (?![\s\S]), which means the same everywhere.
+    for (const [ptr, sub] of walk(schema)) {
+      if (typeof sub.pattern !== 'string') continue;
+      assert.ok(!/(^|[^\\])\$$/.test(sub.pattern), `${file}${ptr} ends with a bare $; use (?![\\s\\S])`);
+    }
+  });
+
+  test(`${file} uses no dialect-specific regex format`, () => {
+    // ADR-0010: format "regex" means ECMA-262 in Ajv and .NET Regex in JsonSchema.Net.
+    for (const [ptr, sub] of walk(schema)) {
+      assert.notEqual(sub.format, 'regex', `${file}${ptr} uses format: regex; use common safeRegex`);
     }
   });
 }

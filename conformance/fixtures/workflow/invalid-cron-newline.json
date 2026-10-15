@@ -1,0 +1,35 @@
+{
+  "description": "cron fields are separated by single spaces only",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/trigger/schedule",
+        "keyword": "pattern"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "nightly"
+    },
+    "spec": {
+      "trigger": {
+        "type": "schedule",
+        "schedule": "0 2 * *\n*"
+      },
+      "steps": [
+        {
+          "id": "s",
+          "agent": "a"
+        }
+      ]
+    }
+  }
+}

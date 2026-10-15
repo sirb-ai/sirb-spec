@@ -1,0 +1,12 @@
+{
+  "description": "a YAML stream holds several resources",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "loader",
+  "expect": {
+    "valid": true
+  },
+  "format": "yaml",
+  "source": "apiVersion: sirb/v1alpha1\nkind: Agent\nmetadata:\n  name: support\n  labels:\n    feature: yes\n    \"on\": \"off\"\nspec:\n  modelBinding: claude-default\n  instructions: |\n    You answer billing questions politely.\n---\napiVersion: sirb/v1alpha1\nkind: ModelBinding\nmetadata: {name: claude-default}\nspec:\n  provider: anthropic\n  model: claude-sonnet-5-5\n  mode: billable\n  budget: {currency: USD, limit: \"100\", period: month, onExceeded: fallback}\n  fallbacks:\n    - ref: local-ollama\n      triggers: [budget-exceeded]\n"
+}

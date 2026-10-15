@@ -1,7 +1,7 @@
 {
   "description": "free-form annotations are not allowed (secret leakage vector)",
   "requirements": [
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -10,9 +10,7 @@
       {
         "instancePath": "/metadata",
         "keyword": "additionalProperties",
-        "params": {
-          "additionalProperty": "annotations"
-        }
+        "property": "annotations"
       }
     ]
   },

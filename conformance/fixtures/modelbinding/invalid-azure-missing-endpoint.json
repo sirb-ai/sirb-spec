@@ -10,9 +10,7 @@
       {
         "instancePath": "/spec",
         "keyword": "required",
-        "params": {
-          "missingProperty": "endpoint"
-        }
+        "property": "endpoint"
       }
     ]
   },

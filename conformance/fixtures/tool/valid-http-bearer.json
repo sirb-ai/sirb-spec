@@ -2,7 +2,7 @@
   "description": "HTTP tool with bearer auth via secretRef",
   "requirements": [
     "SR-SPEC-01",
-    "SR-SPEC-03"
+    "SR-SPEC-04"
   ],
   "level": "schema",
   "expect": {
@@ -16,7 +16,22 @@
     },
     "spec": {
       "type": "http",
-      "description": "Look up a support ticket",
+      "description": "Look up a ticket",
+      "http": {
+        "method": "GET",
+        "url": "https://api.example.com/tickets",
+        "headers": {
+          "accept": "application/json"
+        },
+        "auth": {
+          "type": "bearer",
+          "credentials": {
+            "secretRef": {
+              "name": "ticket-api"
+            }
+          }
+        }
+      },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -27,19 +42,6 @@
         "required": [
           "id"
         ]
-      },
-      "http": {
-        "method": "GET",
-        "url": "https://api.example.com/tickets",
-        "headers": {
-          "accept": "application/json"
-        },
-        "auth": {
-          "type": "bearer",
-          "secretRef": {
-            "name": "ticket-api"
-          }
-        }
       }
     }
   }
