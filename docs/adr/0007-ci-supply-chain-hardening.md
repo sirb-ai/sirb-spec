@@ -14,7 +14,7 @@ Action or npm package in its CI could tamper with the published schemas.
 - `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests. It has three jobs:
   - `npm ci --ignore-scripts && npm test` on Node 22 and 24
   - the Python second-validator conformance runner. Its dependencies are installed with `--require-hashes --no-deps --only-binary=:all:`.
-  - gitleaks over the full git history. The release tarball is checked against a pinned sha256 before it runs.
+  - gitleaks over the full git history. The release tarball is checked against a pinned sha256 before it runs. A canary step then plants a real-looking token in a fixture and fails unless gitleaks reports it. This step exists because an earlier allowlist was silently ignored by gitleaks 8.24.0 (`[[allowlists]]` with `[extend]`), and the single-table form ignores `condition = "AND"`. So the allowlist now matches on the finding's text only.
 - Superseded runs are cancelled for pull requests only. Every `main` build finishes.
 - **Every third-party action is pinned by its full 40-character commit SHA**,
   with a `# vX.Y.Z` comment. Dependabot (already configured for

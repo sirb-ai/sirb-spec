@@ -1,0 +1,34 @@
+{
+  "description": "32-hex env values are rejected unless the name marks an identifier",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp/env/AOAI_CONFIG",
+        "keyword": "not"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "aoai-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "AOAI_CONFIG": "0123456789ABCDEF0123456789ABCDEF"
+        }
+      }
+    }
+  }
+}

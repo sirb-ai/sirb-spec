@@ -113,8 +113,9 @@ checked and `keyword` is the inner keyword that failed (`pattern` or `not`).
 | `empty`, `too-large`, `too-many-documents`, `too-deep` | Limits on the input: 1 MiB, 100 documents, and 64 nested collections by default. |
 | `invalid-input`, `invalid-format`, `io` | The input is not text or bytes, the format is unknown, or the file cannot be read. |
 | `schema` | A schema violation. The issue also carries `instancePath` and `keyword`. |
+| `invalid-regex` | A policy pattern exceeds the complexity cap or does not compile in the linear-time engine (ADR-0010). |
 | `literal-secret` | A literal value in a field meant to hold a secret (for example `dbPassword: {default: …}`). |
-| `possible-secret` | **Warning.** A credential-shaped value outside secret fields, for example in free text, labels or keys. |
+| `possible-secret` | **Warning.** A credential-shaped value outside secret fields, for example in free text, labels, keys or YAML comments. Comment findings carry `line` instead of `instancePath`. |
 | `internal` | Unexpected loader failure, reported as an issue instead of thrown. |
 
 Every code is an `error` except `possible-secret`, which is a `warning`. See
@@ -137,7 +138,8 @@ A fixture's file name prefix must agree with `expect.valid`, and the runner enfo
 
 1. Pick the directory and a slug that says what is being tested.
 2. Every credential-shaped placeholder must contain the marker `FAKE`, for
-   example `ghp_FAKEFAKE…` or `sk-ant-api03-FAKE…`. gitleaks runs in CI and
+   example `ghp_FAKEFAKE…` or `sk-ant-api03-FAKE…`. For 32-hex keys, use
+   only `0123456789abcdef0123456789abcdef`. gitleaks runs in CI and
    allowlists only findings that contain that marker. Never paste a real key.
 3. For an invalid fixture, choose the error that best explains the failure,
    using its `instancePath` and the standard `keyword`. Do not choose a wrapper

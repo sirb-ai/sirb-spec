@@ -31,16 +31,22 @@ that is *meant to hold a secret*. Credential-shaped text anywhere else is a
 **What counts as a secret name.** A name is split into words (kebab-case,
 snake_case, SCREAMING_SNAKE, camelCase). It is a secret name when its **last
 word** is one of:
-- `token`, `secret`, `password`, `passwd`, `pwd`, `passphrase`
+- `token`, `secret`, `password`, `passwd`, `passphrase`
 - `credential(s)`, `auth`, `authorization`, `oauth`
 - `signature`, `sig`, `cookie`, `dsn`
 - `apikey`, `privatekey`, `secretkey`, `accesskey`
+- `pwd`, but only as the last word of a longer name (`DB_PWD`). A bare `PWD`
+  is the shell's working directory.
 
 A name also counts when it ends in `key`:
-- In env var and header names, any trailing `key` counts.
-- In data keys, a trailing `key` counts only after a credential qualifier
-  (`api`, `private`, `access`, `client`, `subscription`, …). So
-  `partitionKey` and `cacheKey` stay data.
+- In env var and header names, a trailing `key` counts unless the word
+  before it is a known non-secret qualifier (`idempotency`, `cache`,
+  `partition`, `sort`, `routing`, …). So `OPENAI_KEY` and `x-api-key` are
+  secrets, while `x-idempotency-key` and `CACHE_KEY` are not.
+- In data keys and URL parameters, a trailing `key` counts only after a
+  credential qualifier (`api`, `private`, `access`, `client`,
+  `subscription`, …), or when it is the whole name. So `partitionKey` and
+  `cacheKey` stay data.
 
 The rule lives in `src/secret-names.mjs`. `scripts/gen-secret-patterns.mjs`
 generates the matching schema regexes from it, and a test fails if the two
@@ -52,9 +58,23 @@ drift apart or disagree on any test vector.
   (`AIza`, `ya29.`), AWS, PEM and JWT
 - URLs whose path is the secret: Slack and Discord webhooks
 - Azure `AccountKey=` and `SharedAccessSignature=`
+- standalone 32-digit hex strings, the shape of Azure AI and Cognitive
+  Services keys. Header and env var names whose last word marks an
+  identifier or digest (`x-request-id`, `etag`, `if-match`, `TENANT_ID`,
+  `CONFIG_MD5`, `*_SHA256`, …) may hold hex. The loader skips this check for
+  such fields too.
 - `scheme://user:pass@`. A user without a password, as in `git@`, is allowed.
 - `bearer|basic|digest|token <value>`
-- credential-named query parameters, including `X-Amz-Signature` and `sig`
+- credential-named parameters in the URL query, **fragment** (`#access_token=`)
+  or matrix part (`;token=`), including `X-Amz-Signature` and `sig`
+- **percent-encoded** parameter names in URLs (`?api%5Fkey=`). These are
+  rejected outright, because they hide a secret name from the rules above.
+  Credential prefixes also count after a percent-escape (`Bearer%20sk-…`),
+  and the loader re-checks free text after percent-decoding it.
+- **YAML comments.** The loader scans every comment token and reports
+  credential shapes as `possible-secret` warnings, with the line number.
+  Comments are not fields, so these are warnings even when the document is
+  otherwise invalid.
 - high-entropy tokens (loader only): at least 24 characters, mixed case plus
   digits, no seven-letter lower-case run, and at least 4.0 bits per character
 
@@ -65,7 +85,9 @@ target each pattern's worst case, and requires each to finish in under one
 second.
 
 **Repository hygiene.** gitleaks runs in CI and as a pre-commit hook. It
-allowlists only findings that contain the marker `FAKE`.
+allowlists only findings whose matched text contains the marker `FAKE` or the
+one sequential hex placeholder. A CI canary step checks that a real-looking
+key in a fixture is still reported (ADR-0007).
 
 ## Consequences
 

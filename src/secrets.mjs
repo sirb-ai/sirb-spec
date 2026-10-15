@@ -1,19 +1,27 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SCHEMA_DIR } from './validator.mjs';
-import { isSecretName } from './secret-names.mjs';
+import { isSecretName, isIdentifierName } from './secret-names.mjs';
 
 // The credential shapes are defined once, in common.schema.json, and reused
 // here so the schema and the loader can never disagree about them. Every
 // repeat in them is bounded, so each test is linear in the input length.
 const defs = JSON.parse(readFileSync(join(SCHEMA_DIR, 'common.schema.json'), 'utf8')).$defs;
 const CREDENTIAL_QUERY = new RegExp(defs.credentialQueryPattern.pattern, 'u');
+const ENCODED_QUERY_NAME = new RegExp(defs.encodedQueryNamePattern.pattern, 'u');
 export const SHAPES = [
   ['known credential prefix', new RegExp(defs.knownTokenPattern.pattern, 'u')],
+  ['32-hex key', new RegExp(defs.hexKeyPattern.pattern, 'u')],
   ['URL with embedded credentials', new RegExp(defs.urlUserinfoPattern.pattern, 'u')],
   ['HTTP authorization value', new RegExp(defs.authSchemePattern.pattern, 'u')],
-  ['credential in URL query', { test: (v) => v.includes('://') && CREDENTIAL_QUERY.test(v) }],
+  ['credential in URL query or fragment', { test: (v) => v.includes('://') && CREDENTIAL_QUERY.test(v) }],
+  ['percent-encoded URL parameter name', { test: (v) => v.includes('://') && ENCODED_QUERY_NAME.test(v) }],
 ];
+
+/** Decodes each %XX escape on its own, so malformed input never throws. */
+function percentDecode(value) {
+  return value.replace(/%[0-9A-Fa-f]{2}/g, (m) => String.fromCharCode(parseInt(m.slice(1), 16)));
+}
 
 // '/' and '+' are base64 characters, so they do not split tokens. A single
 // character class repeated is linear.
@@ -51,11 +59,32 @@ export function isHighEntropyToken(token) {
   );
 }
 
-/** Returns the reason a string looks like a literal secret, or undefined. */
-export function secretReason(value) {
-  for (const [reason, re] of SHAPES) if (re.test(value)) return reason;
+function shapeReason(value, { allowHex = false } = {}) {
+  for (const [reason, re] of SHAPES) if (re.test(value) && !(allowHex && reason === '32-hex key')) return reason;
   if (value.split(TOKEN_SPLIT).some(isHighEntropyToken)) return 'high-entropy token';
   return undefined;
+}
+
+/**
+ * Returns the reason a string looks like a literal secret, or undefined.
+ * Percent-encoded text is also checked after decoding, so `api%5Fkey=` and
+ * `Bearer%20sk-...` are recognised.
+ */
+export function secretReason(value, options) {
+  const reason = shapeReason(value, options);
+  if (reason || !/%[0-9A-Fa-f]{2}/.test(value)) return reason;
+  const decoded = shapeReason(percentDecode(value), options);
+  return decoded && `${decoded}, percent-encoded`;
+}
+
+/** Warnings for credential-shaped YAML comments (comments never hold secrets legitimately). */
+export function scanComments(comments) {
+  const issues = [];
+  for (const { text, instancePath, line, document } of comments) {
+    const reason = secretReason(text);
+    if (reason) issues.push({ code: 'possible-secret', severity: 'warning', instancePath, line, document, location: 'comment', message: `comment looks like it contains a credential (${reason})` });
+  }
+  return issues;
 }
 
 // JSON Schema value keywords: a string under `default` belongs to the
@@ -85,7 +114,8 @@ export function scanSecrets(document) {
       if (!inMeta && field !== undefined && isSecretName(field) && node !== '') {
         issues.push({ code: 'literal-secret', severity: 'error', instancePath: path, message: `"${field}" holds a secret; use a secretRef instead of a literal value` });
       } else if (typeof node === 'string') {
-        const reason = secretReason(node);
+        // Identifier fields (x-request-id, IMAGE_SHA256) may hold hex strings.
+        const reason = secretReason(node, { allowHex: field !== undefined && isIdentifierName(field) });
         if (reason) issues.push({ code: 'possible-secret', severity: 'warning', instancePath: path, message: `value looks like a credential (${reason}); if it is one, use a secretRef` });
       }
     } else if (Array.isArray(node)) {

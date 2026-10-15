@@ -1,6 +1,6 @@
 {
   "name": "@sirb/spec",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sirb Agent Spec: JSON Schemas, reference YAML/JSON loader and conformance suite",
   "license": "Apache-2.0",
   "type": "module",
@@ -34,6 +34,7 @@
   "dependencies": {
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
+    "re2js": "2.8.6",
     "yaml": "2.9.1"
   }
 }

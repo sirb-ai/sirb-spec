@@ -52,8 +52,10 @@ test('every issue carries a severity; only errors make a document invalid', () =
 
 test('isSecretName classifies by the last whole word', () => {
   for (const n of ['apiKey', 'api_key', 'accessToken', 'clientSecret', 'dbPassword', 'privateKey', 'x-auth', 'GH_OAUTH', 'set-cookie']) assert.ok(isSecretName(n), n);
-  for (const n of ['tokenCount', 'maxTokens', 'authorName', 'partitionKey', 'secretName', 'tokenUrl', 'KEYBOARD_LAYOUT', 'x-session-id', 'keyword']) assert.ok(!isSecretName(n), n);
+  for (const n of ['tokenCount', 'maxTokens', 'authorName', 'partitionKey', 'secretName', 'tokenUrl', 'KEYBOARD_LAYOUT', 'x-session-id', 'keyword', 'pwd']) assert.ok(!isSecretName(n), n);
   assert.ok(isSecretName('OPENAI_KEY', { anyKey: true }));
+  assert.ok(isSecretName('DB_PWD', { anyKey: true }));
+  for (const n of ['PWD', 'x-idempotency-key', 'CACHE_KEY']) assert.ok(!isSecretName(n, { anyKey: true }), n);
 });
 
 test('secret heuristics: true positives and known-good negatives', () => {

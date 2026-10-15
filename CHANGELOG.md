@@ -2,6 +2,29 @@
 
 All notable changes to this package. See [VERSIONING.md](VERSIONING.md).
 
+## 0.3.0
+
+**Breaking** (alpha): the policy pattern subset is stricter, and some
+schema rules changed.
+
+- **Policy patterns:**
+  - `*`, `+`, `{n,}` and repeated groups are rejected; use bounded repeats.
+  - `compilePolicyPattern()` matches with RE2 semantics (`re2js`) and a
+    128-instruction complexity cap.
+  - The loader reports `invalid-regex`.
+- **New credential checks:**
+  - 32-hex keys (Azure AI). Identifier and digest header and env names are
+    exempt.
+  - Credential parameters in URL fragments and matrix parameters.
+  - Percent-encoded URL parameter names, and credential prefixes after
+    percent-escapes.
+  - YAML comments, reported as warnings with a line number.
+- **False positives fixed:** `x-idempotency-key`, `CACHE_KEY` and similar
+  `*-key` names with a non-secret qualifier, and a bare `PWD`/`OLDPWD`.
+- The nesting pre-check is no longer fooled by apostrophes in plain text.
+- gitleaks: the allowlist now actually applies, and a CI canary proves real
+  keys are still reported.
+
 ## 0.2.0
 
 **Breaking** (alpha): the loader result and some schema rules changed.

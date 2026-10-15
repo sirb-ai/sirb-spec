@@ -24,13 +24,32 @@ divergences:
   share. Inline flags are not used: case-insensitive matches are written as
   `[Aa]` classes. End of input is written `(?![\s\S])`, never `$`, and the
   meta-lint enforces this. A fixture covers the trailing-newline case.
-- **User-supplied regexes** (`Policy.match.patterns`) use `safeRegex`. It is a
-  portable subset with no lookaround, backreferences, inline flags, named
-  groups, atomic groups or possessive quantifiers. Case-insensitive matching
-  uses `match.caseInsensitive`. **Runtimes must evaluate these patterns with a
-  linear-time engine** (RE2/`re2` in Node.js, `RegexOptions.NonBacktracking`
-  in .NET) or a match timeout of 100 ms or less. `format: regex` is banned by
-  the meta-lint.
+- **User-supplied regexes** (`Policy.match.patterns`) run against model
+  output, which an attacker can influence. Three layers apply:
+  1. **Schema subset (`safeRegex`).** A single scan that is aware of escapes
+     and character classes rejects `*`, `+`, open-ended `{n,}`, repeated
+     groups (`(…){m,n}`), lookaround, backreferences, inline flags, named and
+     atomic groups, and possessive quantifiers. Optional groups `(…)?` and
+     `(?:…)` are allowed, as are bounded single-atom repeats. This rejects
+     every exponential construct, for example `(a+)+$`, `(a|a)*` and
+     `(\w+\s?)+$`. Case-insensitive matching uses `match.caseInsensitive`.
+  2. **Linear-time matching is required.** The subset alone does not make a
+     backtracking engine safe, because adjacent bounded repeats are still
+     polynomial in their bounds. Measured: `[^ ]{0,500}[^ ]{0,500}!` did not
+     finish within several minutes on 1 MB in JavaScript's native RegExp.
+     The reference matcher is `compilePolicyPattern()` (RE2 semantics via
+     `re2js`, using its lazy DFA). .NET runtimes must use
+     `RegexOptions.NonBacktracking`.
+  3. **Complexity cap:** at most 128 compiled instructions. When RE2's DFA
+     runs out of cache, for example on `[ab]{0,32}a[ab]{31}!`, which needs
+     about 2^31 states, matching falls back to the NFA. That is still linear,
+     but costs about 20 ns per instruction per byte in JavaScript. The cap
+     bounds that constant.
+
+  The loader rejects patterns that fail the cap or do not compile, with
+  `invalid-regex`. Tests: accepted patterns match 1 MB of hostile input in
+  under 1 s, and the forced DFA-explosion fallback stays under 3 s per MB.
+  `format: regex` is banned by the meta-lint.
 - **Numbers:** every `integer` and `number` has a `maximum`. Counts and
   durations fit a signed 32-bit int (`int32`). Nothing exceeds 2^53-1. Money
   is a decimal string (ADR-0005).

@@ -42,7 +42,7 @@
         "properties": {
           "source": false,
           "format": false,
-          "expect": { "type": "object", "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false } } } } }
+          "expect": { "type": "object", "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false, "line": false } } } } }
         }
       }
     },
@@ -66,7 +66,8 @@
         "keyword": { "description": "Standard JSON Schema keyword that failed; a false subschema is \"false\".", "type": "string", "minLength": 1 },
         "property": { "description": "Informative: the property named by required, additionalProperties or propertyNames errors. Runners that cannot report it skip the check.", "type": "string" },
         "code": { "description": "Loader issue code (level loader only).", "type": "string", "minLength": 1 },
-        "document": { "description": "Index of the document in a multi-document stream (level loader only).", "type": "integer", "minimum": 0 }
+        "document": { "description": "Index of the document in a multi-document stream (level loader only).", "type": "integer", "minimum": 0 },
+        "line": { "description": "1-based source line, for issues found in YAML comments (level loader only).", "type": "integer", "minimum": 1 }
       }
     }
   }

@@ -1,0 +1,31 @@
+{
+  "description": "PWD (working directory) and *_CACHE_KEY env vars are allowed",
+  "requirements": [
+    "SR-SPEC-04"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "build-mcp"
+    },
+    "spec": {
+      "type": "mcp",
+      "description": "Search MCP server",
+      "mcp": {
+        "transport": "stdio",
+        "command": "search-mcp",
+        "env": {
+          "PWD": "/srv/app",
+          "OLDPWD": "/srv",
+          "IDEMPOTENCY_KEY": "run-42",
+          "CACHE_KEY": "v1"
+        }
+      }
+    }
+  }
+}

@@ -143,17 +143,29 @@
       "$comment": "Readable forms: knownToken = provider key prefixes and secret-bearing URLs at a word boundary; urlUserinfo = scheme://user:pass@; authScheme = /^\\s*(bearer|basic|digest|token)\\s+\\S+\\s*$/i; credentialQuery and the *NamePattern defs are generated from src/secret-names.mjs by scripts/gen-secret-patterns.mjs. Every repeat is bounded so matching is linear (ADR-0004)."
     },
     "nonSecretValue": {
-      "description": "A value in a non-secret map or argument list. Also rejects HTTP auth-scheme prefixes.",
+      "description": "A value in a non-secret header, env var or argument. Rejects credential shapes, HTTP auth-scheme values and 32-hex keys.",
       "type": "string",
       "maxLength": 1024,
       "$ref": "#/$defs/notSecretShaped",
       "not": {
-        "$ref": "#/$defs/authSchemePattern"
+        "anyOf": [
+          {
+            "$ref": "#/$defs/authSchemePattern"
+          },
+          {
+            "$ref": "#/$defs/hexKeyPattern"
+          }
+        ]
       }
     },
     "knownTokenPattern": {
       "type": "string",
-      "pattern": "(^|[^A-Za-z0-9])(sk-|sk_live_|sk_test_|rk_live_|ghp_|gho_|ghs_|ghu_|ghr_|github_pat_|glpat-|xox[abprs]-|xapp-|npm_[A-Za-z0-9]{8}|pypi-AgE|hf_[A-Za-z0-9]{8}|shp(at|ss|ca|pa)_|dop_v1_|ya29\\.|AKIA[0-9A-Z]{12}|ASIA[0-9A-Z]{12}|AIza[0-9A-Za-z_-]{20}|-----BEGIN|eyJ[A-Za-z0-9_-]{8,64}\\.eyJ|[Aa]ccount[Kk]ey=|[Ss]hared[Aa]ccess[Ss]ignature=|hooks\\.slack\\.com/services/|discord(app)?\\.com/api/webhooks/)"
+      "pattern": "(^|[^A-Za-z0-9]|%[0-9A-Fa-f]{2})(sk-|sk_live_|sk_test_|rk_live_|ghp_|gho_|ghs_|ghu_|ghr_|github_pat_|glpat-|xox[abprs]-|xapp-|npm_[A-Za-z0-9]{8}|pypi-AgE|hf_[A-Za-z0-9]{8}|shp(at|ss|ca|pa)_|dop_v1_|ya29\\.|AKIA[0-9A-Z]{12}|ASIA[0-9A-Z]{12}|AIza[0-9A-Za-z_-]{20}|-----BEGIN|eyJ[A-Za-z0-9_-]{8,64}\\.eyJ|[Aa]ccount[Kk]ey=|[Ss]hared[Aa]ccess[Ss]ignature=|hooks\\.slack\\.com/services/|discord(app)?\\.com/api/webhooks/)"
+    },
+    "hexKeyPattern": {
+      "description": "A standalone 32-digit hex string: the shape of Azure AI and Cognitive Services keys (and of MD5 digests; see identifierValue).",
+      "type": "string",
+      "pattern": "(^|[^A-Za-z0-9]|%[0-9A-Fa-f]{2})[0-9a-fA-F]{32}(?![0-9A-Za-z])"
     },
     "urlUserinfoPattern": {
       "type": "string",
@@ -165,10 +177,10 @@
     },
     "credentialQueryPattern": {
       "type": "string",
-      "pattern": "[?&]([^=&#\\s]{0,64}[_.-])?([Aa][Pp][Ii][_.-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Oo][Aa][Uu][Tt][Hh]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Ss][Ii][Gg]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Dd][Ss][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|[Ss][Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|[Aa][Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy]|([Aa][Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy])="
+      "pattern": "[?&#;](([^=&#;\\s]{0,64}[_.-])?([Aa][Pp][Ii][_.-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Oo][Aa][Uu][Tt][Hh]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Ss][Ii][Gg]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Dd][Ss][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|[Ss][Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|[Aa][Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy]|([Aa][Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy])|[Kk][Ee][Yy])="
     },
     "httpsUrl": {
-      "description": "https URL with a host and no userinfo. Credential-named query parameters are rejected; use auth with in: query instead. Link-local (cloud metadata) addresses are rejected.",
+      "description": "https URL with a host and no userinfo. Credential-named or percent-encoded query and fragment parameter names are rejected; use auth with in: query instead. Link-local (cloud metadata) addresses are rejected.",
       "type": "string",
       "format": "uri",
       "maxLength": 2048,
@@ -182,6 +194,11 @@
         {
           "not": {
             "$ref": "#/$defs/credentialQueryPattern"
+          }
+        },
+        {
+          "not": {
+            "$ref": "#/$defs/encodedQueryNamePattern"
           }
         },
         {
@@ -201,13 +218,18 @@
       "pattern": "^[0-9A-Z*/,?LW#-]{1,64}( [0-9A-Z*/,?LW#-]{1,64}){4}(?![\\s\\S])"
     },
     "safeRegex": {
-      "description": "Regular expression in the portable, linear-time-safe subset (ADR-0010): no lookaround, backreferences, inline flags, atomic groups or possessive quantifiers. Runtimes must evaluate it with a linear-time engine or a match timeout.",
+      "description": "User-supplied regex in the portable, ReDoS-safe subset (ADR-0010). Every repeat is bounded ({m,n}, never * or + or {n,}); groups may be optional (?) but not repeated; no lookaround, backreferences, inline flags, named or atomic groups, or possessive quantifiers. With a bounded pattern of at most 512 characters, even a backtracking engine matches in time linear in the input. Runtimes should still use a linear-time engine or a match timeout.",
       "type": "string",
       "minLength": 1,
       "maxLength": 512,
-      "not": {
-        "pattern": "\\(\\?[=!<>imsxn-]|\\\\[1-9]|\\\\k<|[*+?}][+]"
-      }
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^(\\\\[^1-9k]|\\[(\\\\[\\s\\S]|[^\\]\\\\]){0,512}\\]|[^\\\\\\[]){0,512}?([*+]|\\{[0-9]{1,4},\\}|\\)\\{|\\(\\?[^:]|\\\\[1-9]|\\\\k)"
+          }
+        }
+      ],
+      "$comment": "Readable form: scanning left to right and skipping escapes and [character classes], reject *, +, {n,}, a group followed by {, (? other than (?:, \\1-\\9 and \\k."
     },
     "httpHeaders": {
       "description": "Non-secret HTTP headers. Credential headers must use auth with a secretRef.",
@@ -217,6 +239,11 @@
         "pattern": "^[a-z0-9-]{1,128}(?![\\s\\S])",
         "not": {
           "$ref": "#/$defs/headerNamePattern"
+        }
+      },
+      "patternProperties": {
+        "(^|-)(id|uuid|guid|etag|match|digest|checksum|hash|sha|sha1|sha256|md5|version|revision|commit)(?![\\s\\S])": {
+          "$ref": "#/$defs/identifierValue"
         }
       },
       "additionalProperties": {
@@ -231,6 +258,11 @@
         "pattern": "^[A-Z_][A-Z0-9_]{0,127}(?![\\s\\S])",
         "not": {
           "$ref": "#/$defs/envNamePattern"
+        }
+      },
+      "patternProperties": {
+        "(^|_)(ID|UUID|GUID|ETAG|MATCH|DIGEST|CHECKSUM|HASH|SHA|SHA1|SHA256|MD5|VERSION|REVISION|COMMIT)(?![\\s\\S])": {
+          "$ref": "#/$defs/identifierValue"
         }
       },
       "additionalProperties": {
@@ -290,15 +322,15 @@
     },
     "headerNamePattern": {
       "type": "string",
-      "pattern": "(^|-)(apikey|token|secret|password|passwd|pwd|passphrase|credential|credentials|auth|authorization|oauth|signature|sig|cookie|dsn|privatekey|secretkey|accesskey)(?![\\s\\S])|(^|-)key(?![\\s\\S])|^key(?![\\s\\S])"
+      "pattern": "(^|-)(apikey|token|secret|password|passwd|passphrase|credential|credentials|auth|authorization|oauth|signature|sig|cookie|dsn|privatekey|secretkey|accesskey)(?![\\s\\S])|.-(pwd)(?![\\s\\S])|^key(?![\\s\\S])|(?<!idempotency)(?<!partition)(?<!cache)(?<!sort)(?<!primary)(?<!foreign)(?<!routing)(?<!shard)(?<!lookup)(?<!dedup)(?<!dedupe)(?<!object)(?<!row)(?<!group)(?<!public)(?<!publishable)(?<!hash)(?<!index)(?<!map)(?<!composite)-key(?![\\s\\S])"
     },
     "envNamePattern": {
       "type": "string",
-      "pattern": "(^|_)(APIKEY|TOKEN|SECRET|PASSWORD|PASSWD|PWD|PASSPHRASE|CREDENTIAL|CREDENTIALS|AUTH|AUTHORIZATION|OAUTH|SIGNATURE|SIG|COOKIE|DSN|PRIVATEKEY|SECRETKEY|ACCESSKEY)(?![\\s\\S])|(^|_)KEY(?![\\s\\S])|^KEY(?![\\s\\S])"
+      "pattern": "(^|_)(APIKEY|TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|CREDENTIAL|CREDENTIALS|AUTH|AUTHORIZATION|OAUTH|SIGNATURE|SIG|COOKIE|DSN|PRIVATEKEY|SECRETKEY|ACCESSKEY)(?![\\s\\S])|._(PWD)(?![\\s\\S])|^KEY(?![\\s\\S])|(?<!IDEMPOTENCY)(?<!PARTITION)(?<!CACHE)(?<!SORT)(?<!PRIMARY)(?<!FOREIGN)(?<!ROUTING)(?<!SHARD)(?<!LOOKUP)(?<!DEDUP)(?<!DEDUPE)(?<!OBJECT)(?<!ROW)(?<!GROUP)(?<!PUBLIC)(?<!PUBLISHABLE)(?<!HASH)(?<!INDEX)(?<!MAP)(?<!COMPOSITE)_KEY(?![\\s\\S])"
     },
     "keyNamePattern": {
       "type": "string",
-      "pattern": "(^|[_.-])([Aa][Pp][Ii][_.-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Oo][Aa][Uu][Tt][Hh]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Ss][Ii][Gg]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Dd][Ss][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|[Ss][Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|[Aa][Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|(^|[_.-])([Aa][Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])|^[Kk][Ee][Yy](?![\\s\\S])|[a-z0-9](A[Pp][Ii][_.-]?[Kk][Ee][Yy]|T[Oo][Kk][Ee][Nn]|S[Ee][Cc][Rr][Ee][Tt]|P[Aa][Ss][Ss][Ww][Oo][Rr][Dd]|P[Aa][Ss][Ss][Ww][Dd]|P[Ww][Dd]|P[Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|A[Uu][Tt][Hh]|A[Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|O[Aa][Uu][Tt][Hh]|S[Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|S[Ii][Gg]|C[Oo][Oo][Kk][Ii][Ee]|D[Ss][Nn]|P[Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|S[Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|A[Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|[a-z0-9](A[Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])"
+      "pattern": "(^|[_.-])([Aa][Pp][Ii][_.-]?[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Oo][Aa][Uu][Tt][Hh]|[Ss][Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|[Ss][Ii][Gg]|[Cc][Oo][Oo][Kk][Ii][Ee]|[Dd][Ss][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|[Ss][Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|[Aa][Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|.[_.-]([Pp][Ww][Dd])(?![\\s\\S])|^[Kk][Ee][Yy](?![\\s\\S])|(^|[_.-])([Aa][Pp][Ii]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Aa][Cc][Cc][Ee][Ss][Ss]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Aa][Cc][Cc][Oo][Uu][Nn][Tt]|[Ss][Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Ss][Ii][Gg][Nn][Ii][Nn][Gg]|[Ee][Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|[Ll][Ii][Cc][Ee][Nn][Ss][Ee]|[Cc][Ll][Ii][Ee][Nn][Tt]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|[Aa][Uu][Tt][Hh]|[Aa][Pp][Pp]|[Ss][Ee][Rr][Vv][Ii][Cc][Ee]|[Ss][Tt][Oo][Rr][Aa][Gg][Ee]|[Aa][Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])|[a-z0-9](A[Pp][Ii][_.-]?[Kk][Ee][Yy]|T[Oo][Kk][Ee][Nn]|S[Ee][Cc][Rr][Ee][Tt]|P[Aa][Ss][Ss][Ww][Oo][Rr][Dd]|P[Aa][Ss][Ss][Ww][Dd]|P[Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|C[Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|A[Uu][Tt][Hh]|A[Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|O[Aa][Uu][Tt][Hh]|S[Ii][Gg][Nn][Aa][Tt][Uu][Rr][Ee]|S[Ii][Gg]|C[Oo][Oo][Kk][Ii][Ee]|D[Ss][Nn]|P[Rr][Ii][Vv][Aa][Tt][Ee][_.-]?[Kk][Ee][Yy]|S[Ee][Cc][Rr][Ee][Tt][_.-]?[Kk][Ee][Yy]|A[Cc][Cc][Ee][Ss][Ss][_.-]?[Kk][Ee][Yy])(?![\\s\\S])|[a-z0-9](P[Ww][Dd])(?![\\s\\S])|[a-z0-9](A[Pp][Ii]|P[Rr][Ii][Vv][Aa][Tt][Ee]|A[Cc][Cc][Ee][Ss][Ss]|S[Ee][Cc][Rr][Ee][Tt]|A[Cc][Cc][Oo][Uu][Nn][Tt]|S[Uu][Bb][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]|M[Aa][Ss][Tt][Ee][Rr]|S[Ii][Gg][Nn][Ii][Nn][Gg]|E[Nn][Cc][Rr][Yy][Pp][Tt][Ii][Oo][Nn]|L[Ii][Cc][Ee][Nn][Ss][Ee]|C[Ll][Ii][Ee][Nn][Tt]|F[Uu][Nn][Cc][Tt][Ii][Oo][Nn][Ss]|A[Uu][Tt][Hh]|A[Pp][Pp]|S[Ee][Rr][Vv][Ii][Cc][Ee]|S[Tt][Oo][Rr][Aa][Gg][Ee]|A[Dd][Mm][Ii][Nn])[_.-]?[Kk][Ee][Yy](?![\\s\\S])"
     },
     "argValue": {
       "description": "A command-line argument. Secret-named flags (--password, --api-key, --token=...) are rejected; pass secrets through secretEnv.",
@@ -306,6 +338,20 @@
       "$ref": "#/$defs/nonSecretValue",
       "not": {
         "pattern": "^-{1,2}([A-Za-z0-9]{1,32}[_-]){0,4}([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Pp][Ww][Dd]|[Pp][Aa][Ss][Ss][Pp][Hh][Rr][Aa][Ss][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]?|[Aa][Uu][Tt][Hh])(=|(?![\\s\\S]))"
+      }
+    },
+    "encodedQueryNamePattern": {
+      "description": "A percent-encoded query or fragment parameter name, which would hide a secret name such as api%5Fkey from the name rules.",
+      "type": "string",
+      "pattern": "[?&#;][^=&#;\\s]{0,64}%[0-9A-Fa-f]{2}[^=&#;\\s]{0,64}="
+    },
+    "identifierValue": {
+      "description": "A value of a header or env var whose name says it holds an identifier or digest (x-request-id, ETAG, *_SHA256). Like nonSecretValue, but hex strings are allowed.",
+      "type": "string",
+      "maxLength": 1024,
+      "$ref": "#/$defs/notSecretShaped",
+      "not": {
+        "$ref": "#/$defs/authSchemePattern"
       }
     }
   }

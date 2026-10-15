@@ -2,7 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import YAML from 'yaml';
 import { validateDocument } from './validator.mjs';
-import { scanSecrets } from './secrets.mjs';
+import { scanSecrets, scanComments } from './secrets.mjs';
+import { compilePolicyPattern } from './policy-regex.mjs';
 
 // maxDepth counts nested mappings and sequences, including the document root.
 export const DEFAULT_LIMITS = { maxBytes: 1024 * 1024, maxDocuments: 100, maxDepth: 64 };
@@ -36,8 +37,11 @@ function toText(input) {
 /**
  * Upper bound on flow-collection nesting, found by scanning the raw text once
  * before parsing so that "[[[[..." cannot exhaust the parser. Brackets inside
- * quoted scalars and comments are ignored.
+ * quoted scalars and comments are ignored. A quote only opens a scalar at a
+ * token boundary, so an apostrophe in plain text (don't) cannot switch the
+ * count off.
  */
+const QUOTE_OPENS_AFTER = new Set([undefined, ' ', '\t', '\n', '\r', '[', '{', ',', ':', '-', '?']);
 function flowDepth(text) {
   let depth = 0;
   let max = 0;
@@ -47,7 +51,7 @@ function flowDepth(text) {
     if (quote) {
       if (c === '\\' && quote === '"') i++;
       else if (c === quote) quote = '';
-    } else if (c === '"' || c === "'") quote = c;
+    } else if ((c === '"' || c === "'") && QUOTE_OPENS_AFTER.has(text[i - 1])) quote = c;
     else if (c === '#' && (i === 0 || /\s/.test(text[i - 1]))) {
       while (i < text.length && text[i] !== '\n') i++;
     } else if (c === '[' || c === '{') max = Math.max(max, ++depth);
@@ -62,6 +66,29 @@ function flowDepth(text) {
  * (also the "billion laughs" expansion), merge keys, explicit tags,
  * non-string keys and `__proto__` keys. Also enforces maxDepth. Iterative.
  */
+/**
+ * Collects every comment token from the parser's token stream (iteratively),
+ * with its exact line and the index of the document it belongs to.
+ */
+function* recordComments(tokens, comments, lineCounter) {
+  let document = -1;
+  for (const token of tokens) {
+    if (token.type === 'document') document++;
+    const stack = [token];
+    while (stack.length) {
+      const t = stack.pop();
+      if (Array.isArray(t)) {
+        for (const x of t) if (x && typeof x === 'object') stack.push(x);
+      } else if (t.type === 'comment') {
+        comments.push({ text: t.source.slice(1), line: lineCounter.linePos(t.offset).line, document: Math.max(document, 0) });
+      } else {
+        for (const v of Object.values(t)) if (v && typeof v === 'object') stack.push(v);
+      }
+    }
+    yield token;
+  }
+}
+
 function structuralIssues(doc, index, maxDepth) {
   const issues = [];
   const at = { document: index };
@@ -84,7 +111,8 @@ function structuralIssues(doc, index, maxDepth) {
     // Duplicate keys are found here with a Set (linear); the yaml library's
     // own uniqueKeys check is quadratic in the number of keys.
     const seen = new Set();
-    for (const item of node.items) {
+    for (let i = 0; i < node.items.length; i++) {
+      const item = node.items[i];
       if (YAML.isPair(item)) {
         const key = item.key;
         if (YAML.isScalar(key) && key.value === '<<') issues.push(error('yaml-merge-key', 'merge keys (<<) are not allowed', at));
@@ -134,8 +162,12 @@ function parseUnsafe(input, { format = 'yaml', maxBytes = DEFAULT_LIMITS.maxByte
     }
   }
 
-  const docs = YAML.parseAllDocuments(text, { version: '1.2', schema: 'core', uniqueKeys: false, merge: false, strict: true });
-  const list = Array.isArray(docs) ? docs : [];
+  // parseAllDocuments, spelled out so comment tokens can be recorded on the way.
+  const comments = [];
+  const lineCounter = new YAML.LineCounter();
+  const composer = new YAML.Composer({ version: '1.2', schema: 'core', uniqueKeys: false, merge: false, strict: true });
+  const tokens = new YAML.Parser(lineCounter.addNewLine).parse(text);
+  const list = Array.from(composer.compose(recordComments(tokens, comments, lineCounter), false, text.length));
   if (list.length > maxDocuments) {
     return { documents: [], issues: [error('too-many-documents', `stream has ${list.length} documents; limit is ${maxDocuments}`)] };
   }
@@ -153,7 +185,20 @@ function parseUnsafe(input, { format = 'yaml', maxBytes = DEFAULT_LIMITS.maxByte
     documents.push(docIssues.length ? undefined : doc.toJS({ maxAliasCount: 0 }));
   });
   if (list.length === 0) issues.push(error('empty', 'no documents found'));
-  return { documents, issues };
+  return { documents, issues, comments };
+}
+
+/** Policy patterns must also compile in the linear-time engine (JSON Schema cannot check that). */
+function policyPatternIssues(document, index) {
+  if (document.kind !== 'Policy') return [];
+  const issues = [];
+  document.spec.rules.forEach((rule, r) => {
+    (rule.match?.patterns ?? []).forEach((pattern, p) => {
+      const compiled = compilePolicyPattern(pattern, { caseInsensitive: rule.match.caseInsensitive });
+      if (!compiled.ok) issues.push(error('invalid-regex', compiled.reason, { document: index, instancePath: `/spec/rules/${r}/match/patterns/${p}` }));
+    });
+  });
+  return issues;
 }
 
 /**
@@ -172,15 +217,22 @@ export function load(input, options = {}) {
 
 function loadUnsafe(input, options) {
   const format = options.format ?? formatFromFilename(options.filename) ?? 'yaml';
-  const { documents, issues } = parse(input, { ...options, format });
-  if (issues.length === 0) {
+  const { documents, issues, comments = [] } = parse(input, { ...options, format });
+  // Comments are scanned even when the document is invalid: a key in a
+  // comment of a broken file is still a leak.
+  issues.push(...scanComments(comments));
+  if (issues.every((i) => i.severity !== 'error')) {
     documents.forEach((document, index) => {
       if (document === null || typeof document !== 'object' || Array.isArray(document)) {
         issues.push(error('not-an-object', 'each document must be a mapping', { document: index }));
         return;
       }
-      for (const i of validateDocument(document)) issues.push({ ...i, document: index });
-      for (const i of scanSecrets(document)) issues.push({ ...i, document: index });
+      const schemaIssues = validateDocument(document);
+      // A field already rejected by the schema needs no extra warning.
+      const rejected = new Set(schemaIssues.map((i) => i.instancePath));
+      for (const i of schemaIssues) issues.push({ ...i, document: index });
+      for (const i of scanSecrets(document)) if (!(i.severity === 'warning' && rejected.has(i.instancePath))) issues.push({ ...i, document: index });
+      if (schemaIssues.length === 0) issues.push(...policyPatternIssues(document, index));
     });
   }
   const valid = !issues.some(isError);
