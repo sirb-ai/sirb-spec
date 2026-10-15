@@ -1,0 +1,37 @@
+{
+  "description": "schedule triggers require a cron schedule",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/trigger",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "schedule"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "nightly"
+    },
+    "spec": {
+      "trigger": {
+        "type": "schedule"
+      },
+      "steps": [
+        {
+          "id": "s",
+          "agent": "a"
+        }
+      ]
+    }
+  }
+}

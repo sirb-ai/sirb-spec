@@ -1,0 +1,29 @@
+{
+  "description": "Agent requires a modelBinding",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "modelBinding"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support"
+    },
+    "spec": {
+      "instructions": "hi"
+    }
+  }
+}

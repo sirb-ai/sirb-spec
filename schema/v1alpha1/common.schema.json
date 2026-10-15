@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/common.schema.json",
+  "title": "Sirb common definitions",
+  "description": "Shared definitions referenced by every Sirb v1alpha1 kind schema.",
+  "$defs": {
+    "apiVersion": { "const": "sirb/v1alpha1" },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{1,63}$"
+    },
+    "ref": {
+      "description": "Reference to another Sirb resource by name, in the same namespace.",
+      "$ref": "#/$defs/name"
+    },
+    "refList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/ref" }
+    },
+    "description": { "type": "string", "maxLength": 2048 },
+    "seconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "namespace": { "$ref": "#/$defs/name" },
+        "description": { "type": "string", "maxLength": 1024 },
+        "labels": { "$ref": "#/$defs/labels" }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": { "pattern": "^[a-z0-9]([a-z0-9./-]{0,61}[a-z0-9])?$" },
+      "additionalProperties": { "type": "string", "pattern": "^[A-Za-z0-9._-]{0,63}$" }
+    },
+    "secretRef": {
+      "description": "Pointer to a secret held in a secret store. Secret values never appear in a Sirb document.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "key": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,253}$" },
+        "store": {
+          "enum": ["sirb", "kubernetes", "vault", "aws-secrets-manager", "gcp-secret-manager", "azure-key-vault"],
+          "default": "sirb"
+        }
+      }
+    },
+    "secretSource": {
+      "description": "A field whose value is secret. The only accepted form is a secretRef.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secretRef"],
+      "properties": {
+        "secretRef": { "$ref": "#/$defs/secretRef" }
+      }
+    },
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "cron": {
+      "type": "string",
+      "pattern": "^(\\S+\\s){4}\\S+$"
+    },
+    "nonSecretValue": {
+      "type": "string",
+      "maxLength": 1024,
+      "not": { "pattern": "^(Bearer |Basic |sk-|ghp_|github_pat_|xox[abprs]-|AKIA|AIza|-----BEGIN)" }
+    },
+    "httpHeaders": {
+      "description": "Non-secret HTTP headers. Credential headers must use auth with a secretRef.",
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "pattern": "^[a-z0-9-]{1,128}$",
+        "not": { "pattern": "(authorization|cookie|token|secret|passw|api-?key|credential|private-?key|session)" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/nonSecretValue" }
+    },
+    "envVars": {
+      "description": "Non-secret environment variables. Secret variables must use secretEnv.",
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^[A-Z_][A-Z0-9_]{0,127}$",
+        "not": { "pattern": "(TOKEN|SECRET|PASSW|API_?KEY|CREDENTIAL|PRIVATE_?KEY)" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/nonSecretValue" }
+    },
+    "secretEnv": {
+      "description": "Environment variables whose values are injected from secrets.",
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": { "pattern": "^[A-Z_][A-Z0-9_]{0,127}$" },
+      "additionalProperties": { "$ref": "#/$defs/secretSource" }
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "backoff": { "enum": ["none", "fixed", "exponential"] },
+        "initialDelaySeconds": { "type": "integer", "minimum": 0, "maximum": 3600 }
+      }
+    },
+    "embedding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelBinding"],
+      "properties": {
+        "modelBinding": { "$ref": "#/$defs/ref" },
+        "dimensions": { "type": "integer", "minimum": 1, "maximum": 8192 }
+      }
+    }
+  }
+}

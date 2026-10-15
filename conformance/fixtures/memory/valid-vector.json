@@ -1,0 +1,36 @@
+{
+  "description": "user-scoped vector memory on pgvector",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Memory",
+    "metadata": {
+      "name": "user-facts"
+    },
+    "spec": {
+      "type": "vector",
+      "scope": "user",
+      "ttlSeconds": 2592000,
+      "store": {
+        "provider": "pgvector",
+        "connection": {
+          "secretRef": {
+            "name": "pg-memory",
+            "key": "dsn"
+          }
+        }
+      },
+      "embedding": {
+        "modelBinding": "embed-default",
+        "dimensions": 1024
+      }
+    }
+  }
+}

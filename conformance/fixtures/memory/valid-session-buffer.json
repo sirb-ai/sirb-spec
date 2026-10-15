@@ -1,0 +1,25 @@
+{
+  "description": "session buffer memory on the managed store",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Memory",
+    "metadata": {
+      "name": "session-buffer"
+    },
+    "spec": {
+      "type": "buffer",
+      "scope": "session",
+      "maxTokens": 8000,
+      "store": {
+        "provider": "sirb-managed"
+      }
+    }
+  }
+}

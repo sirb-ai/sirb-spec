@@ -1,0 +1,46 @@
+{
+  "description": "HTTP tool with bearer auth via secretRef",
+  "requirements": [
+    "SR-SPEC-01",
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "ticket-lookup"
+    },
+    "spec": {
+      "type": "http",
+      "description": "Look up a support ticket",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "http": {
+        "method": "GET",
+        "url": "https://api.example.com/tickets",
+        "headers": {
+          "accept": "application/json"
+        },
+        "auth": {
+          "type": "bearer",
+          "secretRef": {
+            "name": "ticket-api"
+          }
+        }
+      }
+    }
+  }
+}

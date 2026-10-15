@@ -1,15 +1,30 @@
 {
   "name": "@sirb/spec",
   "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
+  "description": "Sirb Agent Spec v1alpha1: JSON Schemas and conformance suite",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "schema",
+    "conformance"
+  ],
+  "exports": {
+    "./schema/v1alpha1/*": "./schema/v1alpha1/*"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test \"test/**/*.test.mjs\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "Apache-2.0"
+  "keywords": [
+    "sirb",
+    "agent",
+    "json-schema",
+    "conformance"
+  ],
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
 }

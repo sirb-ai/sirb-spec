@@ -1,0 +1,38 @@
+{
+  "description": "Slack bot token cannot be inline",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/slack/botToken",
+        "keyword": "type"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "UIBinding",
+    "metadata": {
+      "name": "support-slack"
+    },
+    "spec": {
+      "target": {
+        "kind": "Agent",
+        "name": "support-agent"
+      },
+      "type": "slack",
+      "slack": {
+        "botToken": "placeholder",
+        "signingSecret": {
+          "secretRef": {
+            "name": "slack-signing"
+          }
+        }
+      }
+    }
+  }
+}

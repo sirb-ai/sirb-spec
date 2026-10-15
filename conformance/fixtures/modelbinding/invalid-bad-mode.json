@@ -1,0 +1,34 @@
+{
+  "description": "mode must be byok or billable",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mode",
+        "keyword": "enum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-default"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "mode": "free",
+      "credentials": {
+        "secretRef": {
+          "name": "anthropic-key",
+          "key": "api-key"
+        }
+      }
+    }
+  }
+}

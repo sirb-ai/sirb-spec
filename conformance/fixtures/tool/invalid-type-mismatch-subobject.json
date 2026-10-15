@@ -1,0 +1,35 @@
+{
+  "description": "type http forbids an mcp block",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/mcp",
+        "keyword": "false schema"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Tool",
+    "metadata": {
+      "name": "ticket-lookup"
+    },
+    "spec": {
+      "type": "http",
+      "description": "x",
+      "http": {
+        "method": "GET",
+        "url": "https://api.example.com"
+      },
+      "mcp": {
+        "transport": "stdio",
+        "command": "x"
+      }
+    }
+  }
+}

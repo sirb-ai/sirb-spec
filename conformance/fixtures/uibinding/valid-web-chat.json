@@ -1,0 +1,36 @@
+{
+  "description": "web chat bound to an Agent",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "UIBinding",
+    "metadata": {
+      "name": "support-widget"
+    },
+    "spec": {
+      "target": {
+        "kind": "Agent",
+        "name": "support-agent"
+      },
+      "type": "web-chat",
+      "webChat": {
+        "allowedOrigins": [
+          "https://www.example.com"
+        ],
+        "greeting": "Hi! How can I help?",
+        "theme": {
+          "primaryColor": "#0A7CFF"
+        }
+      },
+      "access": {
+        "mode": "public"
+      }
+    }
+  }
+}

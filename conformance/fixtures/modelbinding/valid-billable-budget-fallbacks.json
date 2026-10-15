@@ -1,0 +1,47 @@
+{
+  "description": "billable binding with a budget that falls back when exceeded",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "EUR",
+        "limit": 1000.5,
+        "period": "month",
+        "onExceeded": "fallback",
+        "alertThresholds": [
+          0.5,
+          0.9
+        ]
+      },
+      "fallbacks": [
+        {
+          "ref": "claude-haiku-billable",
+          "on": [
+            "budget-exceeded",
+            "rate-limit"
+          ]
+        },
+        {
+          "ref": "local-ollama",
+          "on": [
+            "error"
+          ]
+        }
+      ]
+    }
+  }
+}

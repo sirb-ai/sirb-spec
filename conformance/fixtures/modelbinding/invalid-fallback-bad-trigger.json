@@ -1,0 +1,42 @@
+{
+  "description": "fallback triggers come from a fixed set",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/fallbacks/0/on/0",
+        "keyword": "enum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-default"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "mode": "byok",
+      "credentials": {
+        "secretRef": {
+          "name": "anthropic-key",
+          "key": "api-key"
+        }
+      },
+      "fallbacks": [
+        {
+          "ref": "fb",
+          "on": [
+            "always"
+          ]
+        }
+      ]
+    }
+  }
+}

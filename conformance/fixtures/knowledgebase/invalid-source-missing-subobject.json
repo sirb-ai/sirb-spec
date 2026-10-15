@@ -1,0 +1,36 @@
+{
+  "description": "a source of type git requires a git block",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/sources/0",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "git"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "KnowledgeBase",
+    "metadata": {
+      "name": "repo-docs"
+    },
+    "spec": {
+      "sources": [
+        {
+          "type": "git"
+        }
+      ],
+      "embedding": {
+        "modelBinding": "e"
+      }
+    }
+  }
+}

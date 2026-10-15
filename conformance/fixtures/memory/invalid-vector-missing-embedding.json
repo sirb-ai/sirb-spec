@@ -1,0 +1,30 @@
+{
+  "description": "vector memory requires an embedding",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "embedding"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Memory",
+    "metadata": {
+      "name": "user-facts"
+    },
+    "spec": {
+      "type": "vector",
+      "scope": "user"
+    }
+  }
+}

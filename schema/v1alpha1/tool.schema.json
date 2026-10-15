@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/tool.schema.json",
+  "title": "Sirb Tool",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "const": "Tool" },
+    "metadata": { "$ref": "common.schema.json#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "enum": ["http", "mcp", "function"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "inputSchema": {
+          "description": "JSON Schema describing the tool's input. Free-form by design.",
+          "type": "object"
+        },
+        "http": { "$ref": "#/$defs/http" },
+        "mcp": { "$ref": "#/$defs/mcp" },
+        "function": { "$ref": "#/$defs/function" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "http" } } },
+          "then": { "required": ["http"], "properties": { "mcp": false, "function": false } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "mcp" } } },
+          "then": { "required": ["mcp"], "properties": { "http": false, "function": false } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "function" } } },
+          "then": { "required": ["function"], "properties": { "http": false, "mcp": false } }
+        }
+      ]
+    },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "url"],
+      "properties": {
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "url": { "$ref": "common.schema.json#/$defs/httpsUrl" },
+        "headers": { "$ref": "common.schema.json#/$defs/httpHeaders" },
+        "auth": { "$ref": "#/$defs/auth" },
+        "timeoutSeconds": { "$ref": "common.schema.json#/$defs/seconds" }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport"],
+      "properties": {
+        "transport": { "enum": ["stdio", "streamable-http"] },
+        "url": { "$ref": "common.schema.json#/$defs/httpsUrl" },
+        "command": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "args": { "type": "array", "items": { "type": "string", "maxLength": 1024 } },
+        "env": { "$ref": "common.schema.json#/$defs/envVars" },
+        "secretEnv": { "$ref": "common.schema.json#/$defs/secretEnv" },
+        "headers": { "$ref": "common.schema.json#/$defs/httpHeaders" },
+        "auth": { "$ref": "#/$defs/auth" },
+        "toolFilter": { "type": "array", "uniqueItems": true, "items": { "type": "string", "maxLength": 128 } }
+      },
+      "if": { "properties": { "transport": { "const": "stdio" } } },
+      "then": { "required": ["command"], "properties": { "url": false } },
+      "else": { "required": ["url"], "properties": { "command": false, "args": false } }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "handler"],
+      "properties": {
+        "runtime": { "enum": ["nodejs22", "python3.12"] },
+        "handler": { "type": "string", "pattern": "^[A-Za-z0-9_./:-]{1,256}$" },
+        "env": { "$ref": "common.schema.json#/$defs/envVars" },
+        "secretEnv": { "$ref": "common.schema.json#/$defs/secretEnv" }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["none", "bearer", "api-key", "oauth2-client-credentials"] },
+        "secretRef": { "$ref": "common.schema.json#/$defs/secretRef" },
+        "in": { "enum": ["header", "query"] },
+        "name": { "type": "string", "pattern": "^[a-z0-9_-]{1,128}$" },
+        "tokenUrl": { "$ref": "common.schema.json#/$defs/httpsUrl" },
+        "clientId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "clientSecret": { "$ref": "common.schema.json#/$defs/secretSource" },
+        "scopes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "maxLength": 256 } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "none" } } },
+          "then": { "properties": { "secretRef": false, "clientSecret": false } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "bearer" } } },
+          "then": { "required": ["secretRef"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "api-key" } } },
+          "then": { "required": ["secretRef", "in", "name"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "oauth2-client-credentials" } } },
+          "then": { "required": ["tokenUrl", "clientId", "clientSecret"] }
+        }
+      ]
+    }
+  }
+}

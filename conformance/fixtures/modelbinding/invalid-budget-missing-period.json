@@ -1,0 +1,36 @@
+{
+  "description": "budget requires a period",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/budget",
+        "keyword": "required",
+        "params": {
+          "missingProperty": "period"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-billable"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "mode": "billable",
+      "budget": {
+        "currency": "USD",
+        "limit": 10,
+        "onExceeded": "block"
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "description": "a workflow needs at least one step",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/steps",
+        "keyword": "minItems"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "empty"
+    },
+    "spec": {
+      "steps": []
+    }
+  }
+}

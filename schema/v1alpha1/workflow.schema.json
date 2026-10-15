@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/workflow.schema.json",
+  "title": "Sirb Workflow",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "const": "Workflow" },
+    "metadata": { "$ref": "common.schema.json#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/description" },
+        "trigger": { "$ref": "#/$defs/trigger" },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/step" }
+        },
+        "outputs": { "$ref": "#/$defs/valueMap" }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["manual", "schedule", "webhook", "event"] },
+        "schedule": { "$ref": "common.schema.json#/$defs/cron" },
+        "event": { "type": "string", "pattern": "^[a-z0-9.-]{1,128}$" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "schedule" } } },
+          "then": { "required": ["schedule"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "event" } } },
+          "then": { "required": ["event"] }
+        }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/name" },
+        "agent": { "$ref": "common.schema.json#/$defs/ref" },
+        "tool": { "$ref": "common.schema.json#/$defs/ref" },
+        "dependsOn": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/name" }
+        },
+        "input": { "$ref": "#/$defs/valueMap" },
+        "when": { "type": "string", "maxLength": 1024 },
+        "retry": { "$ref": "common.schema.json#/$defs/retry" },
+        "timeoutSeconds": { "$ref": "common.schema.json#/$defs/seconds" }
+      },
+      "oneOf": [
+        { "required": ["agent"] },
+        { "required": ["tool"] }
+      ]
+    },
+    "valueMap": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": { "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string", "maxLength": 8192 },
+          { "type": "number" },
+          { "type": "boolean" }
+        ]
+      }
+    }
+  }
+}

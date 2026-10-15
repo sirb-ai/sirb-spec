@@ -1,0 +1,9 @@
+# Extends the default gitleaks rules. Conformance fixtures deliberately contain
+# credential-shaped placeholder strings (e.g. "Bearer not-a-real-token") to prove
+# the schemas reject them; none are real secrets. See docs/adr/0004.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Conformance fixtures contain fake, credential-shaped placeholders"
+paths = ['''^conformance/fixtures/''']

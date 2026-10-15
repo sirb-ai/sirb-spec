@@ -1,0 +1,33 @@
+{
+  "description": "free-form annotations are not allowed (secret leakage vector)",
+  "requirements": [
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/metadata",
+        "keyword": "additionalProperties",
+        "params": {
+          "additionalProperty": "annotations"
+        }
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support",
+      "annotations": {
+        "note": "x"
+      }
+    },
+    "spec": {
+      "modelBinding": "claude-default",
+      "instructions": "You answer billing questions politely."
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "description": "at most five fallbacks",
+  "requirements": [
+    "SR-SPEC-02"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/fallbacks",
+        "keyword": "maxItems"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "claude-default"
+    },
+    "spec": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "mode": "byok",
+      "credentials": {
+        "secretRef": {
+          "name": "anthropic-key",
+          "key": "api-key"
+        }
+      },
+      "fallbacks": [
+        {
+          "ref": "fb-a"
+        },
+        {
+          "ref": "fb-b"
+        },
+        {
+          "ref": "fb-c"
+        },
+        {
+          "ref": "fb-d"
+        },
+        {
+          "ref": "fb-e"
+        },
+        {
+          "ref": "fb-f"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "description": "three-step scheduled workflow with dependencies",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+      "name": "nightly-triage"
+    },
+    "spec": {
+      "trigger": {
+        "type": "schedule",
+        "schedule": "0 2 * * *"
+      },
+      "steps": [
+        {
+          "id": "fetch",
+          "tool": "ticket-lookup",
+          "input": {
+            "status": "open",
+            "limit": 50
+          }
+        },
+        {
+          "id": "classify",
+          "agent": "triage-agent",
+          "dependsOn": [
+            "fetch"
+          ],
+          "retry": {
+            "maxAttempts": 3,
+            "backoff": "exponential"
+          }
+        },
+        {
+          "id": "notify",
+          "tool": "slack-post",
+          "dependsOn": [
+            "classify"
+          ],
+          "when": "steps.classify.output.urgent == true"
+        }
+      ]
+    }
+  }
+}

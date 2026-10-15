@@ -1,0 +1,37 @@
+{
+  "description": "byok azure-openai binding with endpoint and its own budget",
+  "requirements": [
+    "SR-SPEC-02",
+    "SR-SPEC-03"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "ModelBinding",
+    "metadata": {
+      "name": "azure-gpt"
+    },
+    "spec": {
+      "provider": "azure-openai",
+      "model": "gpt-4o",
+      "mode": "byok",
+      "endpoint": "https://acme.openai.azure.com",
+      "credentials": {
+        "secretRef": {
+          "name": "azure-openai",
+          "key": "key1",
+          "store": "azure-key-vault"
+        }
+      },
+      "budget": {
+        "currency": "USD",
+        "limit": 50,
+        "period": "day",
+        "onExceeded": "notify"
+      }
+    }
+  }
+}

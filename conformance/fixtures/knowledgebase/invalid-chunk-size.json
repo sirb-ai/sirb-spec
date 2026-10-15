@@ -1,0 +1,41 @@
+{
+  "description": "chunk size must be at least 64",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": false,
+    "errors": [
+      {
+        "instancePath": "/spec/chunking/size",
+        "keyword": "minimum"
+      }
+    ]
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "KnowledgeBase",
+    "metadata": {
+      "name": "help-center"
+    },
+    "spec": {
+      "sources": [
+        {
+          "type": "files",
+          "files": {
+            "paths": [
+              "docs/"
+            ]
+          }
+        }
+      ],
+      "embedding": {
+        "modelBinding": "e"
+      },
+      "chunking": {
+        "size": 10
+      }
+    }
+  }
+}

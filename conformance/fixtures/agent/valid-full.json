@@ -1,0 +1,40 @@
+{
+  "description": "Agent referencing tools, memory, knowledge bases and policies",
+  "requirements": [
+    "SR-SPEC-01"
+  ],
+  "level": "schema",
+  "expect": {
+    "valid": true
+  },
+  "document": {
+    "apiVersion": "sirb/v1alpha1",
+    "kind": "Agent",
+    "metadata": {
+      "name": "support-agent",
+      "namespace": "acme",
+      "labels": {
+        "team": "support",
+        "sirb.ai/tier": "gold"
+      }
+    },
+    "spec": {
+      "modelBinding": "claude-default",
+      "instructions": "You answer billing questions politely.",
+      "description": "Tier-1 support agent",
+      "tools": [
+        "ticket-lookup",
+        "refund"
+      ],
+      "memory": "session-buffer",
+      "knowledgeBases": [
+        "help-center"
+      ],
+      "policies": [
+        "pii-redaction"
+      ],
+      "maxIterations": 20,
+      "timeoutSeconds": 300
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sirb.ai/schemas/v1alpha1/memory.schema.json",
+  "title": "Sirb Memory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "$ref": "common.schema.json#/$defs/apiVersion" },
+    "kind": { "const": "Memory" },
+    "metadata": { "$ref": "common.schema.json#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "scope"],
+      "properties": {
+        "type": { "enum": ["buffer", "summary", "vector", "key-value"] },
+        "scope": { "enum": ["session", "user", "agent", "global"] },
+        "ttlSeconds": { "type": "integer", "minimum": 0 },
+        "maxEntries": { "type": "integer", "minimum": 1 },
+        "maxTokens": { "type": "integer", "minimum": 1 },
+        "store": { "$ref": "#/$defs/store" },
+        "embedding": { "$ref": "common.schema.json#/$defs/embedding" }
+      },
+      "if": { "properties": { "type": { "const": "vector" } } },
+      "then": { "required": ["embedding"] }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider"],
+      "properties": {
+        "provider": { "enum": ["sirb-managed", "in-memory", "redis", "postgres", "pgvector", "qdrant"] },
+        "connection": { "$ref": "common.schema.json#/$defs/secretSource" }
+      },
+      "if": { "properties": { "provider": { "enum": ["sirb-managed", "in-memory"] } } },
+      "then": { "properties": { "connection": false } },
+      "else": { "required": ["connection"] }
+    }
+  }
+}
