@@ -1,0 +1,115 @@
+{
+  "description": "user-scoped buffer memory written by one run is read by the next run of the same org and user, and is invisible to another user or another org",
+  "requirements": ["SR-RT-05"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "concierge" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "You are a friendly store concierge.",
+        "memory": "chat-history"
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Memory",
+      "metadata": { "name": "chat-history" },
+      "spec": {
+        "type": "buffer",
+        "scope": "user",
+        "maxEntries": 100,
+        "store": { "provider": "in-memory" }
+      }
+    }
+  ],
+  "agent": "concierge",
+  "model": {
+    "turns": [
+      {
+        "expectRequest": { "messageCount": 2 },
+        "text": "Nice to meet you, Layla.",
+        "usage": { "inputTokens": 20, "outputTokens": 7 }
+      },
+      {
+        "expectRequest": {
+          "messageCount": 4,
+          "messagesInclude": [
+            { "role": "system", "text": { "$contains": "You are a friendly store concierge." } },
+            { "role": "user", "text": "My name is Layla." },
+            { "role": "assistant", "text": "Nice to meet you, Layla." },
+            { "role": "user", "text": "What is my name?" }
+          ]
+        },
+        "text": "Your name is Layla.",
+        "usage": { "inputTokens": 35, "outputTokens": 6 }
+      },
+      {
+        "expectRequest": { "messageCount": 2, "messagesInclude": [{ "role": "user", "text": "What is my name?" }] },
+        "text": "I don't know your name yet.",
+        "usage": { "inputTokens": 20, "outputTokens": 8 }
+      },
+      {
+        "expectRequest": { "messageCount": 2, "messagesInclude": [{ "role": "user", "text": "What is my name?" }] },
+        "text": "I don't know your name yet.",
+        "usage": { "inputTokens": 20, "outputTokens": 8 }
+      }
+    ]
+  },
+  "runs": [
+    { "input": "My name is Layla.", "context": { "orgId": "org-a", "userId": "user-1", "sessionId": "session-1" } },
+    { "input": "What is my name?", "context": { "orgId": "org-a", "userId": "user-1", "sessionId": "session-2" } },
+    { "input": "What is my name?", "context": { "orgId": "org-a", "userId": "user-2", "sessionId": "session-3" } },
+    { "input": "What is my name?", "context": { "orgId": "org-b", "userId": "user-1", "sessionId": "session-4" } }
+  ],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "text": "Nice to meet you, Layla." },
+        "steps": [{ "type": "model", "turn": 0 }],
+        "memory": [
+          { "op": "read", "memory": "chat-history", "entries": 0 },
+          { "op": "write", "memory": "chat-history", "entries": 2 }
+        ]
+      },
+      {
+        "output": { "text": "Your name is Layla." },
+        "steps": [{ "type": "model", "turn": 1 }],
+        "memory": [
+          { "op": "read", "memory": "chat-history", "entries": 2 },
+          { "op": "write", "memory": "chat-history", "entries": 2 }
+        ]
+      },
+      {
+        "output": { "text": "I don't know your name yet." },
+        "steps": [{ "type": "model", "turn": 2 }],
+        "memory": [
+          { "op": "read", "memory": "chat-history", "entries": 0 },
+          { "op": "write", "memory": "chat-history", "entries": 2 }
+        ]
+      },
+      {
+        "output": { "text": "I don't know your name yet." },
+        "steps": [{ "type": "model", "turn": 3 }],
+        "memory": [
+          { "op": "read", "memory": "chat-history", "entries": 0 },
+          { "op": "write", "memory": "chat-history", "entries": 2 }
+        ]
+      }
+    ]
+  }
+}

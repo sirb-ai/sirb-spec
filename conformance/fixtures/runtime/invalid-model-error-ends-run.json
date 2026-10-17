@@ -1,0 +1,48 @@
+{
+  "description": "a failed model call with no fallback ends the run with model-error, marks the agent and chat spans as errors, and emits no usage record",
+  "requirements": ["SR-RT-02", "SR-RT-06", "SR-RT-07"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "greeter" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "You are a concise assistant for an online store."
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    }
+  ],
+  "agent": "greeter",
+  "model": {
+    "turns": [
+      { "error": { "type": "rate-limit", "message": "scripted rate limit" } }
+    ]
+  },
+  "runs": [{ "input": "Hello" }],
+  "expect": {
+    "valid": false,
+    "errors": [{ "code": "model-error", "run": 0 }],
+    "runs": [{ "steps": [{ "type": "model", "turn": 0 }] }],
+    "spans": [
+      {
+        "name": "invoke_agent greeter",
+        "status": "error",
+        "attributes": { "gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": "greeter", "error.type": "model-error" }
+      },
+      { "name": "chat claude-sonnet-5-5", "parent": 0, "status": "error", "attributes": { "gen_ai.operation.name": "chat" } }
+    ],
+    "usage": []
+  }
+}

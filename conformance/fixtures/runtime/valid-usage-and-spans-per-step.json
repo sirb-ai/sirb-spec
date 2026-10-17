@@ -1,0 +1,204 @@
+{
+  "description": "a three-step billable run emits one agent span, one chat span per model call, one tool span per tool call, and one usage record per model call whose request_id is unique and matches its chat span",
+  "requirements": ["SR-RT-06", "SR-RT-07"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "order-assistant" },
+      "spec": {
+        "modelBinding": "fixture-billable",
+        "instructions": "You help customers track their orders and shipments.",
+        "tools": ["get-order", "get-shipment"],
+        "maxIterations": 5
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-billable" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "billable",
+        "budget": { "currency": "SAR", "limit": "500.00", "period": "month", "onExceeded": "block" }
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Tool",
+      "metadata": { "name": "get-order" },
+      "spec": {
+        "type": "http",
+        "description": "Look up an order by its ID.",
+        "http": { "method": "GET", "url": "https://api.example.com/orders" },
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["orderId"],
+          "properties": { "orderId": { "type": "string", "minLength": 1, "maxLength": 10 } }
+        }
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Tool",
+      "metadata": { "name": "get-shipment" },
+      "spec": {
+        "type": "http",
+        "description": "Look up a shipment by its ID.",
+        "http": { "method": "GET", "url": "https://api.example.com/shipments" },
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["shipmentId"],
+          "properties": { "shipmentId": { "type": "string", "minLength": 1, "maxLength": 32 } }
+        }
+      }
+    }
+  ],
+  "agent": "order-assistant",
+  "model": {
+    "turns": [
+      {
+        "toolCalls": [{ "id": "call_1", "name": "get-order", "arguments": { "orderId": "1042" } }],
+        "usage": { "inputTokens": 120, "outputTokens": 18 }
+      },
+      {
+        "toolCalls": [{ "id": "call_2", "name": "get-shipment", "arguments": { "shipmentId": "SHP-77" } }],
+        "usage": { "inputTokens": 190, "outputTokens": 16 }
+      },
+      {
+        "text": "Order 1042 is with the courier and arrives on 14 October.",
+        "usage": { "inputTokens": 260, "outputTokens": 15 }
+      }
+    ]
+  },
+  "tools": {
+    "get-order": { "results": [{ "orderId": "1042", "status": "shipped", "shipmentId": "SHP-77" }] },
+    "get-shipment": { "results": [{ "shipmentId": "SHP-77", "eta": "2026-10-14" }] }
+  },
+  "runs": [
+    { "input": "Where is order 1042?", "context": { "orgId": "org-fixture-1", "userId": "user-1", "sessionId": "session-1" } }
+  ],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "text": "Order 1042 is with the courier and arrives on 14 October." },
+        "steps": [
+          { "type": "model", "turn": 0 },
+          { "type": "tool", "name": "get-order", "callId": "call_1", "arguments": { "orderId": "1042" }, "outcome": "ok" },
+          { "type": "model", "turn": 1 },
+          { "type": "tool", "name": "get-shipment", "callId": "call_2", "arguments": { "shipmentId": "SHP-77" }, "outcome": "ok" },
+          { "type": "model", "turn": 2 }
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "name": "invoke_agent order-assistant",
+        "status": "ok",
+        "attributes": { "gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": "order-assistant" }
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "parent": 0,
+        "attributes": {
+          "gen_ai.operation.name": "chat",
+          "gen_ai.provider.name": "anthropic",
+          "gen_ai.request.model": "claude-sonnet-5-5",
+          "gen_ai.usage.input_tokens": 120,
+          "gen_ai.usage.output_tokens": 18,
+          "sirb.request_id": { "$capture": "req-0" },
+          "sirb.billing.mode": "billable"
+        },
+        "absentAttributes": ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.system_instructions"]
+      },
+      {
+        "name": "execute_tool get-order",
+        "parent": 0,
+        "status": "ok",
+        "attributes": { "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": "get-order", "gen_ai.tool.call.id": "call_1" },
+        "absentAttributes": ["gen_ai.tool.call.arguments", "gen_ai.tool.call.result"]
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "parent": 0,
+        "attributes": {
+          "gen_ai.operation.name": "chat",
+          "gen_ai.provider.name": "anthropic",
+          "gen_ai.request.model": "claude-sonnet-5-5",
+          "gen_ai.usage.input_tokens": 190,
+          "gen_ai.usage.output_tokens": 16,
+          "sirb.request_id": { "$capture": "req-1" },
+          "sirb.billing.mode": "billable"
+        },
+        "absentAttributes": ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.system_instructions"]
+      },
+      {
+        "name": "execute_tool get-shipment",
+        "parent": 0,
+        "status": "ok",
+        "attributes": { "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": "get-shipment", "gen_ai.tool.call.id": "call_2" },
+        "absentAttributes": ["gen_ai.tool.call.arguments", "gen_ai.tool.call.result"]
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "parent": 0,
+        "attributes": {
+          "gen_ai.operation.name": "chat",
+          "gen_ai.provider.name": "anthropic",
+          "gen_ai.request.model": "claude-sonnet-5-5",
+          "gen_ai.usage.input_tokens": 260,
+          "gen_ai.usage.output_tokens": 15,
+          "sirb.request_id": { "$capture": "req-2" },
+          "sirb.billing.mode": "billable"
+        },
+        "absentAttributes": ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.system_instructions"]
+      }
+    ],
+    "usage": [
+      {
+        "request_id": { "$capture": "req-0" },
+        "run_id": { "$capture": "run-0" },
+        "step": 0,
+        "agent": "order-assistant",
+        "model_binding": "fixture-billable",
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "billable",
+        "org_id": "org-fixture-1",
+        "input_tokens": 120,
+        "output_tokens": 18
+      },
+      {
+        "request_id": { "$capture": "req-1" },
+        "run_id": { "$capture": "run-0" },
+        "step": 1,
+        "agent": "order-assistant",
+        "model_binding": "fixture-billable",
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "billable",
+        "org_id": "org-fixture-1",
+        "input_tokens": 190,
+        "output_tokens": 16
+      },
+      {
+        "request_id": { "$capture": "req-2" },
+        "run_id": { "$capture": "run-0" },
+        "step": 2,
+        "agent": "order-assistant",
+        "model_binding": "fixture-billable",
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "billable",
+        "org_id": "org-fixture-1",
+        "input_tokens": 260,
+        "output_tokens": 15
+      }
+    ]
+  }
+}

@@ -14,11 +14,49 @@ const FIXTURE_REQUIREMENTS = {
   'SR-SPEC-03': 'YAML and JSON accepted',
   'SR-SPEC-04': 'secrets only as secretRef; loader rejects literal keys',
 };
-const KNOWN = new Set([...Object.keys(FIXTURE_REQUIREMENTS), 'SR-SPEC-05']);
+// DRAFT runtime IDs (docs/requirements.md, ADR-0012). The ID-to-item mapping
+// is a guess awaiting owner confirmation. SR-RT-10 (the CLI) is verified by
+// CLI smoke tests in the runtime repositories, so no fixture may cite it.
+const RUNTIME_REQUIREMENTS = {
+  'SR-RT-01': 'load and validate v1alpha1; defineAgent()',
+  'SR-RT-02': 'single-agent run loop with typed tools',
+  'SR-RT-03': 'structured output with retry',
+  'SR-RT-05': 'in-memory and Postgres memory store',
+  'SR-RT-06': 'OpenTelemetry span per step',
+  'SR-RT-07': 'usage record per model call',
+};
+const KNOWN = new Set([...Object.keys(FIXTURE_REQUIREMENTS), 'SR-SPEC-05', ...Object.keys(RUNTIME_REQUIREMENTS)]);
 
 const fixtures = readdirSync(FIXTURE_DIR, { recursive: true })
   .filter((f) => f.endsWith('.json'))
   .map((f) => ({ file: f, ...JSON.parse(readFileSync(join(FIXTURE_DIR, f), 'utf8')) }));
+
+for (const [id, title] of Object.entries(RUNTIME_REQUIREMENTS)) {
+  test(`${id} (${title}) has a runtime fixture`, () => {
+    assert.ok(fixtures.some((f) => f.level === 'runtime' && f.requirements.includes(id)), `${id} has no runtime fixture`);
+  });
+}
+
+test('runtime fixtures cite only SR-RT IDs, and SR-RT IDs appear only on runtime fixtures', () => {
+  for (const f of fixtures) {
+    for (const id of f.requirements) {
+      assert.equal(id.startsWith('SR-RT-'), f.level === 'runtime', `${f.file} (level ${f.level}) cites ${id}`);
+    }
+  }
+});
+
+test('SR-RT-03 has a runtime fixture where retries are exhausted', () => {
+  assert.ok(fixtures.some((f) => f.level === 'runtime' && f.requirements.includes('SR-RT-03') && !f.expect.valid));
+});
+
+test('docs/requirements.md lists every runtime requirement ID, marked as a draft', () => {
+  const doc = readFileSync(join(ROOT, 'docs', 'requirements.md'), 'utf8');
+  // Drop this check in the same change that records the owner's confirmed mapping.
+  assert.ok(doc.includes('DRAFT — proposed by Claude, needs owner confirmation'), 'the SR-RT section must stay marked as a draft');
+  for (const id of [...Object.keys(RUNTIME_REQUIREMENTS), 'SR-RT-10']) {
+    assert.ok(doc.includes(`| ${id} |`), `docs/requirements.md has no row for ${id}`);
+  }
+});
 
 test('fixtures only cite known requirement IDs', () => {
   for (const f of fixtures) {

@@ -1,0 +1,81 @@
+{
+  "description": "structured output that fails the schema is retried with a repair message; the second attempt is returned and both attempts emit a usage record",
+  "requirements": ["SR-RT-03", "SR-RT-07"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "order-classifier" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "Classify the customer's message."
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    }
+  ],
+  "agent": "order-classifier",
+  "model": {
+    "turns": [
+      {
+        "object": { "category": "refund-request", "urgent": true },
+        "usage": { "inputTokens": 60, "outputTokens": 14 }
+      },
+      {
+        "expectRequest": {
+          "messagesInclude": [
+            { "role": "user", "text": "My parcel arrived damaged and I want my money back." },
+            { "role": "assistant" },
+            { "role": "user" }
+          ]
+        },
+        "object": { "category": "refund", "urgent": true },
+        "usage": { "inputTokens": 110, "outputTokens": 12 }
+      }
+    ]
+  },
+  "runs": [
+    {
+      "input": "My parcel arrived damaged and I want my money back.",
+      "structuredOutput": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["category", "urgent"],
+          "properties": {
+            "category": { "enum": ["refund", "delivery", "other"] },
+            "urgent": { "type": "boolean" }
+          }
+        },
+        "maxRetries": 2
+      }
+    }
+  ],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "object": { "category": "refund", "urgent": true } },
+        "steps": [
+          { "type": "model", "turn": 0 },
+          { "type": "retry", "reason": "structured-output-invalid", "attempt": 1 },
+          { "type": "model", "turn": 1 }
+        ]
+      }
+    ],
+    "usage": [
+      { "request_id": { "$capture": "req-0" }, "run_id": { "$capture": "run-0" }, "step": 0, "mode": "byok", "input_tokens": 60, "output_tokens": 14 },
+      { "request_id": { "$capture": "req-1" }, "run_id": { "$capture": "run-0" }, "step": 1, "mode": "byok", "input_tokens": 110, "output_tokens": 12 }
+    ]
+  }
+}
