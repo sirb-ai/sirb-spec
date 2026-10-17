@@ -11,20 +11,23 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": { "type": "string", "pattern": "^SR-SPEC-[0-9]{2}$" }
+      "items": { "type": "string", "pattern": "^SR-(SPEC|RT)-[0-9]{2}$" }
     },
     "level": {
-      "description": "schema: `document` is checked against the JSON Schemas. loader: `source` text is run through a conforming loader (parse, validate, secret scan).",
-      "enum": ["schema", "loader"]
+      "description": "schema: `document` is checked against the JSON Schemas. loader: `source` text is run through a conforming loader (parse, validate, secret scan). runtime: `documents` are run by a conforming runtime against a scripted model and stub tools (ADR-0012). `semantic` is reserved.",
+      "enum": ["schema", "loader", "runtime"]
     },
     "expect": {
       "type": "object",
       "additionalProperties": false,
       "required": ["valid"],
       "properties": {
-        "valid": { "type": "boolean" },
+        "valid": { "description": "schema and loader: the input is accepted. runtime: every run completes without an error.", "type": "boolean" },
         "errors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } },
-        "warnings": { "description": "Loader warnings that must be reported (level loader only). Warnings never affect `valid`.", "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } }
+        "warnings": { "description": "Loader warnings that must be reported (level loader only). Warnings never affect `valid`.", "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/locator" } },
+        "runs": { "description": "One entry per item in `runs`, in the same order (level runtime only).", "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/runExpectation" } },
+        "spans": { "description": "Every Sirb span the fixture emits across all runs, in start order (level runtime only). When present, the count must match exactly.", "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/spanExpectation" } },
+        "usage": { "description": "Every usage record the fixture emits across all runs, in emission order, after de-duplication by request_id (level runtime only). When present, the count must match exactly.", "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/usageExpectation" } }
       },
       "if": { "properties": { "valid": { "const": false } } },
       "then": { "required": ["errors"] },
@@ -32,7 +35,30 @@
     },
     "document": {},
     "source": { "type": "string" },
-    "format": { "enum": ["yaml", "json"] }
+    "format": { "enum": ["yaml", "json"] },
+    "documents": {
+      "description": "The Sirb documents under test (level runtime only). The runner loads them through the runtime's own loader.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "type": "object" }
+    },
+    "agent": { "description": "metadata.name of the Agent document to run.", "$ref": "#/$defs/name" },
+    "model": { "$ref": "#/$defs/scriptedModel" },
+    "tools": {
+      "description": "Stub implementations keyed by Tool metadata.name. They replace the real implementation, whatever the Tool's type.",
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": { "$ref": "#/$defs/name" },
+      "additionalProperties": { "$ref": "#/$defs/toolStub" }
+    },
+    "runs": {
+      "description": "Runs executed in order against one runtime instance and one memory store.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/run" }
+    }
   },
   "allOf": [
     {
@@ -42,7 +68,12 @@
         "properties": {
           "source": false,
           "format": false,
-          "expect": { "type": "object", "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false, "line": false } } } } }
+          "documents": false,
+          "agent": false,
+          "model": false,
+          "tools": false,
+          "runs": false,
+          "expect": { "type": "object", "properties": { "warnings": false, "runs": false, "spans": false, "usage": false, "errors": { "type": "array", "items": { "type": "object", "required": ["instancePath", "keyword"], "properties": { "code": false, "document": false, "line": false, "run": false } } } } }
         }
       }
     },
@@ -52,7 +83,33 @@
         "required": ["source", "format"],
         "properties": {
           "document": false,
-          "expect": { "type": "object", "properties": { "errors": { "type": "array", "items": { "type": "object", "required": ["code"] } } } }
+          "documents": false,
+          "agent": false,
+          "model": false,
+          "tools": false,
+          "runs": false,
+          "expect": {
+            "type": "object",
+            "properties": {
+              "runs": false,
+              "spans": false,
+              "usage": false,
+              "errors": { "type": "array", "items": { "type": "object", "required": ["code"], "properties": { "run": false } } },
+              "warnings": { "type": "array", "items": { "type": "object", "properties": { "run": false } } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "level": { "const": "runtime" } } },
+      "then": {
+        "required": ["documents", "agent", "model", "runs"],
+        "properties": {
+          "document": false,
+          "source": false,
+          "format": false,
+          "expect": { "type": "object", "required": ["runs"], "properties": { "warnings": false, "errors": { "type": "array", "items": { "type": "object", "required": ["code", "run"], "properties": { "instancePath": false, "keyword": false, "property": false, "document": false, "line": false } } } } }
         }
       }
     }
@@ -65,9 +122,238 @@
         "instancePath": { "description": "JSON Pointer into the document (the standard output format's instanceLocation).", "type": "string" },
         "keyword": { "description": "Standard JSON Schema keyword that failed; a false subschema is \"false\".", "type": "string", "minLength": 1 },
         "property": { "description": "Informative: the property named by required, additionalProperties or propertyNames errors. Runners that cannot report it skip the check.", "type": "string" },
-        "code": { "description": "Loader issue code (level loader only).", "type": "string", "minLength": 1 },
+        "code": { "description": "Loader issue code (level loader) or run error code (level runtime).", "type": "string", "minLength": 1 },
         "document": { "description": "Index of the document in a multi-document stream (level loader only).", "type": "integer", "minimum": 0 },
-        "line": { "description": "1-based source line, for issues found in YAML comments (level loader only).", "type": "integer", "minimum": 1 }
+        "line": { "description": "1-based source line, for issues found in YAML comments (level loader only).", "type": "integer", "minimum": 1 },
+        "run": { "description": "Index of the run in `runs` that ended with this error (level runtime only).", "type": "integer", "minimum": 0, "maximum": 15 }
+      }
+    },
+    "name": { "description": "A Sirb resource name (common.schema.json#/$defs/name).", "type": "string", "pattern": "^[a-z0-9-]{1,63}(?![\\s\\S])" },
+    "toolName": { "description": "A tool name as the model sees it. It may name a tool that does not exist.", "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}(?![\\s\\S])" },
+    "callId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}(?![\\s\\S])" },
+    "contextId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}(?![\\s\\S])" },
+    "count": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "scriptedModel": {
+      "description": "A deterministic stand-in for every ModelBinding. Each model call consumes the next turn, across all runs.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turns"],
+      "properties": {
+        "turns": { "type": "array", "minItems": 1, "maxItems": 64, "items": { "$ref": "#/$defs/turn" } }
+      }
+    },
+    "turn": {
+      "description": "One canned model response. `object` is shorthand for `text` holding its JSON serialization. A turn without `error` must carry `usage`.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string", "maxLength": 65536 },
+        "object": { "description": "Delivered to the runtime as text: the JSON serialization of this value." },
+        "toolCalls": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/toolCall" } },
+        "error": { "$ref": "#/$defs/modelError" },
+        "usage": { "$ref": "#/$defs/tokenUsage" },
+        "expectRequest": { "$ref": "#/$defs/requestExpectation" }
+      },
+      "anyOf": [{ "required": ["text"] }, { "required": ["object"] }, { "required": ["toolCalls"] }, { "required": ["error"] }],
+      "oneOf": [{ "required": ["error"] }, { "required": ["usage"] }],
+      "dependentSchemas": {
+        "error": { "properties": { "text": false, "object": false, "toolCalls": false, "usage": false } },
+        "object": { "properties": { "text": false, "toolCalls": false } }
+      }
+    },
+    "toolCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "arguments"],
+      "properties": {
+        "id": { "$ref": "#/$defs/callId" },
+        "name": { "$ref": "#/$defs/toolName" },
+        "arguments": { "description": "The arguments exactly as the model produced them." }
+      }
+    },
+    "modelError": {
+      "description": "The model call fails. The types mirror ModelBinding fallback triggers.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["error", "timeout", "rate-limit"] },
+        "message": { "type": "string", "maxLength": 1024 }
+      }
+    },
+    "tokenUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "outputTokens"],
+      "properties": {
+        "inputTokens": { "$ref": "#/$defs/count" },
+        "outputTokens": { "$ref": "#/$defs/count" }
+      }
+    },
+    "requestExpectation": {
+      "description": "Assertions on the request the runtime sent for this turn, in the neutral transcript form (ADR-0012).",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "messagesInclude": { "description": "Each entry matches a distinct request message, in this relative order (an ordered subsequence).", "type": "array", "minItems": 1, "maxItems": 64, "items": { "$ref": "#/$defs/messageExpectation" } },
+        "messageCount": { "description": "Exact number of messages in the request, system messages included.", "type": "integer", "minimum": 1, "maximum": 1024 },
+        "tools": { "description": "Exact set of tool names offered to the model (order ignored).", "type": "array", "uniqueItems": true, "maxItems": 128, "items": { "$ref": "#/$defs/toolName" } }
+      }
+    },
+    "messageExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": { "enum": ["system", "user", "assistant", "tool"] },
+        "text": { "$ref": "#/$defs/textMatch" },
+        "toolCalls": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/toolCall" } },
+        "toolCallId": { "$ref": "#/$defs/callId" },
+        "isError": { "type": "boolean" },
+        "result": { "description": "The tool result value. Objects match as subsets (ADR-0012)." }
+      }
+    },
+    "textMatch": { "anyOf": [{ "type": "string" }, { "$ref": "#/$defs/containsMatcher" }] },
+    "containsMatcher": {
+      "description": "Matches a string that contains this substring.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$contains"],
+      "properties": { "$contains": { "type": "string", "minLength": 1 } }
+    },
+    "captureMatcher": {
+      "description": "Matches a non-empty string. Every occurrence of one capture name must bind the same value; different names must bind different values.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$capture"],
+      "properties": { "$capture": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}(?![\\s\\S])" } }
+    },
+    "toolStub": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["results"],
+      "properties": {
+        "results": { "description": "The value returned by the n-th accepted invocation. An empty list means the tool must never be invoked.", "type": "array", "maxItems": 64, "items": {} }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input"],
+      "properties": {
+        "input": { "description": "The user message that starts the run.", "type": "string", "minLength": 1, "maxLength": 65536 },
+        "context": { "$ref": "#/$defs/runContext" },
+        "structuredOutput": { "$ref": "#/$defs/structuredOutput" }
+      }
+    },
+    "runContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "orgId": { "$ref": "#/$defs/contextId" },
+        "userId": { "$ref": "#/$defs/contextId" },
+        "sessionId": { "$ref": "#/$defs/contextId" }
+      }
+    },
+    "structuredOutput": {
+      "description": "Per-run structured output request. Agent Spec v1alpha1 has no output field yet (ADR-0012).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "maxRetries"],
+      "properties": {
+        "schema": { "type": "object", "$ref": "https://json-schema.org/draft/2020-12/schema" },
+        "maxRetries": { "type": "integer", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "runExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "output": { "$ref": "#/$defs/outputExpectation" },
+        "steps": { "description": "The exact, ordered step trace of the run.", "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/step" } },
+        "memory": { "description": "The exact, ordered memory store operations of the run.", "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/memoryOp" } }
+      }
+    },
+    "outputExpectation": {
+      "description": "The final output, compared exactly.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string" },
+        "object": {}
+      },
+      "oneOf": [{ "required": ["text"] }, { "required": ["object"] }]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["model", "tool", "retry"] },
+        "turn": { "description": "Index of the scripted turn this model call consumed.", "type": "integer", "minimum": 0, "maximum": 63 },
+        "name": { "$ref": "#/$defs/toolName" },
+        "callId": { "$ref": "#/$defs/callId" },
+        "arguments": { "description": "The arguments the runtime handled, compared exactly." },
+        "outcome": { "enum": ["ok", "invalid-arguments"] },
+        "reason": { "enum": ["structured-output-invalid"] },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 10 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "model" } } },
+          "then": { "required": ["turn"], "properties": { "name": false, "callId": false, "arguments": false, "outcome": false, "reason": false, "attempt": false } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "tool" } } },
+          "then": { "required": ["name", "callId", "arguments", "outcome"], "properties": { "turn": false, "reason": false, "attempt": false } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "retry" } } },
+          "then": { "required": ["reason", "attempt"], "properties": { "turn": false, "name": false, "callId": false, "arguments": false, "outcome": false } }
+        }
+      ]
+    },
+    "memoryOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "memory", "entries"],
+      "properties": {
+        "op": { "enum": ["read", "write"] },
+        "memory": { "$ref": "#/$defs/name" },
+        "entries": { "description": "Number of transcript messages read or written.", "$ref": "#/$defs/count" }
+      }
+    },
+    "spanExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "parent": { "description": "Index, in expect.spans, of the expected parent span.", "type": "integer", "minimum": 0, "maximum": 255 },
+        "status": { "description": "error: OTel status Error. ok: OTel status Unset or Ok.", "enum": ["ok", "error"] },
+        "attributes": { "description": "Attributes that must be present with these values. Extra attributes are fine.", "type": "object", "maxProperties": 64, "propertyNames": { "pattern": "^[a-z0-9_.]{1,128}(?![\\s\\S])" } },
+        "absentAttributes": { "description": "Attributes that must not be present.", "type": "array", "uniqueItems": true, "maxItems": 64, "items": { "type": "string", "pattern": "^[a-z0-9_.]{1,128}(?![\\s\\S])" } }
+      }
+    },
+    "usageExpectation": {
+      "description": "A usage record. Field names are the record's wire names (ADR-0012). Extra fields in the actual record are fine.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "mode", "input_tokens", "output_tokens"],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/captureMatcher" },
+        "run_id": { "$ref": "#/$defs/captureMatcher" },
+        "step": { "description": "0-based index of the model call within its run, retries included.", "type": "integer", "minimum": 0, "maximum": 255 },
+        "agent": { "$ref": "#/$defs/name" },
+        "model_binding": { "$ref": "#/$defs/name" },
+        "provider": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "model": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "mode": { "enum": ["byok", "billable"] },
+        "org_id": { "$ref": "#/$defs/contextId" },
+        "input_tokens": { "$ref": "#/$defs/count" },
+        "output_tokens": { "$ref": "#/$defs/count" }
       }
     }
   }

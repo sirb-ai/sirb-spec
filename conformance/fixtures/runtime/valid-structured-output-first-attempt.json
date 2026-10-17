@@ -1,0 +1,62 @@
+{
+  "description": "structured output that matches the run's schema on the first attempt is returned as an object with no retry",
+  "requirements": ["SR-RT-03"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "order-classifier" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "Classify the customer's message."
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    }
+  ],
+  "agent": "order-classifier",
+  "model": {
+    "turns": [
+      {
+        "object": { "category": "refund", "urgent": true },
+        "usage": { "inputTokens": 60, "outputTokens": 12 }
+      }
+    ]
+  },
+  "runs": [
+    {
+      "input": "My parcel arrived damaged and I want my money back.",
+      "structuredOutput": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["category", "urgent"],
+          "properties": {
+            "category": { "enum": ["refund", "delivery", "other"] },
+            "urgent": { "type": "boolean" }
+          }
+        },
+        "maxRetries": 2
+      }
+    }
+  ],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "object": { "category": "refund", "urgent": true } },
+        "steps": [{ "type": "model", "turn": 0 }]
+      }
+    ]
+  }
+}

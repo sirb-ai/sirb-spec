@@ -2,6 +2,24 @@
 
 All notable changes to this package. See [VERSIONING.md](VERSIONING.md).
 
+## Unreleased
+
+**Draft, for owner review.** No `schema/v1alpha1` file changed.
+
+- **Conformance:** proposed `level: runtime` fixtures (ADR-0012, status
+  Proposed). They drive a runtime with a scripted model and stub tools, with no
+  network, no real model and no secrets. They assert the output, the step
+  trace, tool arguments, memory operations, OTel GenAI spans and usage
+  records.
+  - `fixture.schema.json` is extended additively. Existing fixtures are
+    unchanged, and `requirements` now also accepts `SR-RT-NN`.
+  - Nine fixtures are added under `conformance/fixtures/runtime/`.
+  - The reference runners validate runtime fixtures (their shape, their
+    embedded documents and their consistency) but do not execute them. The
+    Python runner also validates their embedded documents.
+- **Requirements:** `docs/requirements.md` is added with only a **draft**
+  SR-RT section. Its ID-to-item mapping is unconfirmed.
+
 ## 0.3.0
 
 **Breaking** (alpha): the policy pattern subset is stricter, and some

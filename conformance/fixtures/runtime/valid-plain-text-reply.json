@@ -1,0 +1,71 @@
+{
+  "description": "a plain text reply ends the run after one model call and emits one byok usage record",
+  "requirements": ["SR-RT-01", "SR-RT-02", "SR-RT-07"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "greeter" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "You are a concise assistant for an online store."
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    }
+  ],
+  "agent": "greeter",
+  "model": {
+    "turns": [
+      {
+        "expectRequest": {
+          "messageCount": 2,
+          "messagesInclude": [
+            { "role": "system", "text": { "$contains": "You are a concise assistant for an online store." } },
+            { "role": "user", "text": "Hello" }
+          ],
+          "tools": []
+        },
+        "text": "Hello! How can I help you today?",
+        "usage": { "inputTokens": 25, "outputTokens": 9 }
+      }
+    ]
+  },
+  "runs": [
+    { "input": "Hello", "context": { "orgId": "org-fixture-1" } }
+  ],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "text": "Hello! How can I help you today?" },
+        "steps": [{ "type": "model", "turn": 0 }]
+      }
+    ],
+    "usage": [
+      {
+        "request_id": { "$capture": "req-0" },
+        "run_id": { "$capture": "run-0" },
+        "step": 0,
+        "agent": "greeter",
+        "model_binding": "fixture-model",
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "org_id": "org-fixture-1",
+        "input_tokens": 25,
+        "output_tokens": 9
+      }
+    ]
+  }
+}

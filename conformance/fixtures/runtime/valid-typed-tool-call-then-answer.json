@@ -1,0 +1,83 @@
+{
+  "description": "a typed tool call with valid arguments invokes the tool, returns its result to the model, and the next turn answers",
+  "requirements": ["SR-RT-02"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "order-assistant" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "You help customers track their orders. Use the get-order tool.",
+        "tools": ["get-order"],
+        "maxIterations": 5
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Tool",
+      "metadata": { "name": "get-order" },
+      "spec": {
+        "type": "http",
+        "description": "Look up an order by its ID.",
+        "http": { "method": "GET", "url": "https://api.example.com/orders" },
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["orderId"],
+          "properties": { "orderId": { "type": "string", "minLength": 1, "maxLength": 10 } }
+        }
+      }
+    }
+  ],
+  "agent": "order-assistant",
+  "model": {
+    "turns": [
+      {
+        "expectRequest": { "tools": ["get-order"] },
+        "toolCalls": [{ "id": "call_1", "name": "get-order", "arguments": { "orderId": "1042" } }],
+        "usage": { "inputTokens": 40, "outputTokens": 15 }
+      },
+      {
+        "expectRequest": {
+          "messagesInclude": [
+            { "role": "user", "text": "Where is order 1042?" },
+            { "role": "assistant", "toolCalls": [{ "id": "call_1", "name": "get-order", "arguments": { "orderId": "1042" } }] },
+            { "role": "tool", "toolCallId": "call_1", "isError": false, "result": { "orderId": "1042", "status": "shipped", "eta": "2026-10-14" } }
+          ]
+        },
+        "text": "Order 1042 has shipped and should arrive on 14 October.",
+        "usage": { "inputTokens": 95, "outputTokens": 14 }
+      }
+    ]
+  },
+  "tools": {
+    "get-order": { "results": [{ "orderId": "1042", "status": "shipped", "eta": "2026-10-14" }] }
+  },
+  "runs": [{ "input": "Where is order 1042?" }],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "text": "Order 1042 has shipped and should arrive on 14 October." },
+        "steps": [
+          { "type": "model", "turn": 0 },
+          { "type": "tool", "name": "get-order", "callId": "call_1", "arguments": { "orderId": "1042" }, "outcome": "ok" },
+          { "type": "model", "turn": 1 }
+        ]
+      }
+    ]
+  }
+}

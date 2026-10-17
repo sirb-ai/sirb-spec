@@ -1,0 +1,115 @@
+{
+  "description": "tool arguments that fail inputSchema are not executed; the model receives an invalid-tool-arguments error result with standard locators, corrects the call and answers",
+  "requirements": ["SR-RT-02", "SR-RT-06"],
+  "level": "runtime",
+  "documents": [
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Agent",
+      "metadata": { "name": "order-assistant" },
+      "spec": {
+        "modelBinding": "fixture-model",
+        "instructions": "You help customers track their orders. Use the get-order tool.",
+        "tools": ["get-order"],
+        "maxIterations": 5
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "ModelBinding",
+      "metadata": { "name": "fixture-model" },
+      "spec": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "mode": "byok",
+        "credentials": { "secretRef": { "name": "fixture-model-key", "key": "api-key" } }
+      }
+    },
+    {
+      "apiVersion": "sirb/v1alpha1",
+      "kind": "Tool",
+      "metadata": { "name": "get-order" },
+      "spec": {
+        "type": "http",
+        "description": "Look up an order by its ID.",
+        "http": { "method": "GET", "url": "https://api.example.com/orders" },
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["orderId"],
+          "properties": { "orderId": { "type": "string", "minLength": 1, "maxLength": 10 } }
+        }
+      }
+    }
+  ],
+  "agent": "order-assistant",
+  "model": {
+    "turns": [
+      {
+        "toolCalls": [{ "id": "call_1", "name": "get-order", "arguments": { "orderId": 1042 } }],
+        "usage": { "inputTokens": 40, "outputTokens": 15 }
+      },
+      {
+        "expectRequest": {
+          "messagesInclude": [
+            {
+              "role": "tool",
+              "toolCallId": "call_1",
+              "isError": true,
+              "result": { "error": { "code": "invalid-tool-arguments", "issues": [{ "instancePath": "/orderId", "keyword": "type" }] } }
+            }
+          ]
+        },
+        "toolCalls": [{ "id": "call_2", "name": "get-order", "arguments": { "orderId": "1042" } }],
+        "usage": { "inputTokens": 90, "outputTokens": 15 }
+      },
+      {
+        "expectRequest": {
+          "messagesInclude": [
+            { "role": "tool", "toolCallId": "call_1", "isError": true },
+            { "role": "tool", "toolCallId": "call_2", "isError": false, "result": { "orderId": "1042", "status": "shipped" } }
+          ]
+        },
+        "text": "Order 1042 has shipped.",
+        "usage": { "inputTokens": 130, "outputTokens": 7 }
+      }
+    ]
+  },
+  "tools": {
+    "get-order": { "results": [{ "orderId": "1042", "status": "shipped" }] }
+  },
+  "runs": [{ "input": "Where is order 1042?" }],
+  "expect": {
+    "valid": true,
+    "runs": [
+      {
+        "output": { "text": "Order 1042 has shipped." },
+        "steps": [
+          { "type": "model", "turn": 0 },
+          { "type": "tool", "name": "get-order", "callId": "call_1", "arguments": { "orderId": 1042 }, "outcome": "invalid-arguments" },
+          { "type": "model", "turn": 1 },
+          { "type": "tool", "name": "get-order", "callId": "call_2", "arguments": { "orderId": "1042" }, "outcome": "ok" },
+          { "type": "model", "turn": 2 }
+        ]
+      }
+    ],
+    "spans": [
+      { "name": "invoke_agent order-assistant", "status": "ok", "attributes": { "gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": "order-assistant" } },
+      { "name": "chat claude-sonnet-5-5", "parent": 0, "attributes": { "gen_ai.operation.name": "chat" } },
+      {
+        "name": "execute_tool get-order",
+        "parent": 0,
+        "status": "error",
+        "attributes": { "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": "get-order", "gen_ai.tool.call.id": "call_1", "error.type": "invalid-tool-arguments" }
+      },
+      { "name": "chat claude-sonnet-5-5", "parent": 0, "attributes": { "gen_ai.operation.name": "chat" } },
+      {
+        "name": "execute_tool get-order",
+        "parent": 0,
+        "status": "ok",
+        "attributes": { "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": "get-order", "gen_ai.tool.call.id": "call_2" }
+      },
+      { "name": "chat claude-sonnet-5-5", "parent": 0, "attributes": { "gen_ai.operation.name": "chat" } }
+    ]
+  }
+}
